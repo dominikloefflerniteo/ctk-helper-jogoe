@@ -1658,3 +1658,31 @@ body.minimal-ui .long-form { display: none; }
   opacity: 0.6;
   transition: opacity 120ms ease;
 }
+
+
+/* ---------- waiting for the cards the game dealt ---------- */
+/* The field is short of 5 and the deck is not empty, so the game has already
+   put cards there and only the user can say which. Advice is withheld until
+   they do — a suggestion about a board that does not exist is worse than none. */
+.slot-awaiting {
+  border-style: dashed;
+  border-color: var(--accent);
+  animation: awaitPulse 1.5s ease-in-out infinite;
+}
+.slot-awaiting .slot-placeholder {
+  color: var(--accent);
+  font-weight: 800;
+  opacity: 0.9;
+}
+@keyframes awaitPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(242, 201, 76, 0.30); }
+  50%      { box-shadow: 0 0 0 5px rgba(242, 201, 76, 0.06); }
+}
+.suggestion-note.awaiting {
+  color: var(--accent);
+  font-weight: 600;
+}
+/* Nudge attention to the palette, which is where the answer is given. */
+body.awaiting-cards .palette-area .board-label {
+  color: var(--accent);
+}

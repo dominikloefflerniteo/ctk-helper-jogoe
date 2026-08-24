@@ -7,7 +7,7 @@ import { rankCombos, prettyCard } from "./solver.js";
 
 // ---------- board (5 slots) ----------
 
-export function renderBoard(boardEl, state, { picked, suggested, suggestionKind, onSlotClick } = {}) {
+export function renderBoard(boardEl, state, { picked, suggested, suggestionKind, onSlotClick, awaiting } = {}) {
   boardEl.innerHTML = "";
   for (let i = 0; i < BOARD_SIZE; i++) {
     const slot = document.createElement("button");
@@ -23,7 +23,13 @@ export function renderBoard(boardEl, state, { picked, suggested, suggestionKind,
       slot.innerHTML = cardInnerHTML(card);
     } else {
       slot.classList.add("slot-empty");
-      slot.innerHTML = `<span class="slot-placeholder">${i + 1}</span>`;
+      // `awaiting` = the game has already dealt a card into this position and
+      // we are waiting for the user to tell us which one. Different from an
+      // empty slot at the end of a run, where nothing is coming.
+      if (awaiting) slot.classList.add("slot-awaiting");
+      slot.innerHTML = awaiting
+        ? `<span class="slot-placeholder">?</span>`
+        : `<span class="slot-placeholder">${i + 1}</span>`;
     }
 
     if (picked && picked.has(i)) slot.classList.add("slot-picked");

@@ -4,7 +4,8 @@
 
 import {
   createState, addCard, discardSlot, confirmPick, undo, resetState,
-  usedCardSet, autoFillBoardFromDeck, BOARD_SIZE, HAND_SIZE, chestForScore,
+  usedCardSet, autoFillBoardFromDeck, deckRemaining, BOARD_SIZE, HAND_SIZE,
+  chestForScore,
 } from "./game.js";
 import { suggest, createPolicyCache, chestOutlook } from "./policy.js";
 import { applyToDOM, setLang, onLangChange, t } from "./i18n.js";
@@ -211,18 +212,31 @@ function toast(msg) {
 
 // ---------- refresh ----------
 
+// True while the game has dealt cards we have not been told about yet: the
+// field is not full and the deck still holds cards. Any advice computed in this
+// state would be advice about a board that does not exist, so the helper asks
+// for the missing cards instead of guessing.
+function awaitingCards() {
+  if (practiceMode) return false;           // practice deals them itself
+  const empty = state.board.filter((c) => !c).length;
+  return empty > 0 && deckRemaining(state).length > 0;
+}
+
 function refresh() {
   // Practice mode: any time the board has empty slots and the deck still has
   // cards, auto-draw to keep the field at 5. Single place handles all cases
   // (after confirm, after discard, after toggle, after reset).
   if (practiceMode) autoFillBoardFromDeck(state);
 
-  const move = computeSuggestion();
+  const waiting = awaitingCards();
+  const move = waiting ? null : computeSuggestion();
   lastSuggestion = move;
   const suggested = move ? new Set(move.slots) : null;
   const suggestionKind = move ? move.kind : null;
 
-  renderBoard(els.board, state, { picked: pickedSlots, suggested, suggestionKind, onSlotClick });
+  renderBoard(els.board, state, {
+    picked: pickedSlots, suggested, suggestionKind, onSlotClick, awaiting: waiting,
+  });
   els.board.querySelectorAll(".slot").forEach((slot, i) => {
     slot.addEventListener("contextmenu", (e) => { e.preventDefault(); onSlotRightClick(i); });
   });
@@ -234,8 +248,13 @@ function refresh() {
   });
   updateSidebar(els, state, { picked: pickedSlots });
 
-  els.suggestionNote.textContent = move ? adviceText(move) : t("suggestionPlaceholder");
-  els.suggestionNote.classList.toggle("pending", !!move && !suggestionCache.strong);
+  const missing = state.board.filter((c) => !c).length;
+  els.suggestionNote.textContent = waiting
+    ? t("awaitingCards", { n: missing })
+    : (move ? adviceText(move) : t("suggestionPlaceholder"));
+  els.suggestionNote.classList.toggle("awaiting", waiting);
+  els.suggestionNote.classList.toggle("pending", !waiting && !!move && !suggestionCache.strong);
+  document.body.classList.toggle("awaiting-cards", waiting);
   els.acceptSuggestionBtn.disabled = !move;
   if (move && move.kind === "discard") {
     els.acceptSuggestionBtn.textContent = t("discardCards", { n: move.slots.length });

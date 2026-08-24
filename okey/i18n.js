@@ -14,6 +14,10 @@ const STRINGS = {
       "Near the end it stops estimating and solves the position exactly.",
 
     practice: "Practice",
+    awaitingCards: (p) => p.n === 1
+      ? "Which card did the game deal? Click it below."
+      : `Which ${p.n} cards did the game deal? Click them below.`,
+
     doneTitle: "Done — no better chest possible",
     doneBody: (p) => `You finished on ${p.score} points, which is a ${p.tier} chest. Even with the best of the cards still left, ${p.next} points can no longer be reached — so nothing you do from here changes the reward.`,
     doneGold: (p) => `You finished on ${p.score} points — a gold chest, the best there is. Nothing left to improve.`,
@@ -41,10 +45,6 @@ const STRINGS = {
     colFollowing: "Following this",
     col678: "6-7-8 only",
     gold: "Gold", silver: "Silver", bronze: "Bronze",
-    chestRatesNote:
-      "Gold from 400 points, silver from 300. Measured in simulation: games played by following " +
-      "every suggestion, against the usual rush — bin everything but 6/7/8 and take the " +
-      "same-colour run. That rush tops out at 300 points, so it can never produce a gold chest.",
 
     session: "Session", games: "Games", avgScore: "Avg score", reset: "Reset",
     globalAllTime: "Everyone, all time",
@@ -122,6 +122,10 @@ const STRINGS = {
       "nachziehen sollst. Gegen Ende schätzt er nicht mehr, sondern rechnet die Stellung exakt aus.",
 
     practice: "Übung",
+    awaitingCards: (p) => p.n === 1
+      ? "Welche Karte hat das Spiel gegeben? Klick sie unten an."
+      : `Welche ${p.n} Karten hat das Spiel gegeben? Klick sie unten an.`,
+
     doneTitle: "Fertig — mehr ist nicht drin",
     doneBody: (p) => `Du stehst bei ${p.score} Punkten, das ist eine ${p.tier}truhe. Selbst mit den besten noch vorhandenen Karten sind ${p.next} Punkte nicht mehr erreichbar — ab hier ändert kein Zug mehr die Belohnung.`,
     doneGold: (p) => `Du stehst bei ${p.score} Punkten — Goldtruhe, mehr geht nicht. Es gibt nichts mehr zu verbessern.`,
@@ -149,11 +153,6 @@ const STRINGS = {
     colFollowing: "Mit diesem Helfer",
     col678: "Nur 6-7-8",
     gold: "Gold", silver: "Silber", bronze: "Bronze",
-    chestRatesNote:
-      "Gold ab 400 Punkten, Silber ab 300. In der Simulation gemessen: Spiele, in denen jeder " +
-      "Vorschlag befolgt wurde, gegen die übliche schnelle Spielweise — alles außer 6/7/8 " +
-      "wegwerfen und die farbgleiche Reihe nehmen. Diese Spielweise endet bei 300 Punkten und " +
-      "kann deshalb nie eine Goldtruhe erreichen.",
 
     session: "Sitzung", games: "Runden", avgScore: "Ø Punkte", reset: "Zurücksetzen",
     globalAllTime: "Alle, seit jeher",
@@ -231,6 +230,10 @@ const STRINGS = {
       "gir; sana şimdi el alman mı yoksa bir kart atıp yeniden çekmen mi gerektiğini söyler. " +
       "Sona doğru tahmin etmeyi bırakır ve pozisyonu tam olarak hesaplar.",
     practice: "Alıştırma",
+    awaitingCards: (p) => p.n === 1
+      ? "Oyun hangi kartı verdi? Aşağıdan tıkla."
+      : `Oyun hangi ${p.n} kartı verdi? Aşağıdan tıkla.`,
+
     doneTitle: "Bitti — daha iyi sandık mümkün değil",
     doneBody: (p) => `${p.score} puanda bitirdin, bu bir ${p.tier} sandık. Kalan kartların en iyisiyle bile ${p.next} puana ulaşılamaz — buradan sonrası ödülü değiştirmez.`,
     doneGold: (p) => `${p.score} puanda bitirdin — altın sandık, en iyisi. Geliştirecek bir şey kalmadı.`,
@@ -255,10 +258,6 @@ const STRINGS = {
     colFollowing: "Bunu takip ederek",
     col678: "Sadece 6-7-8",
     gold: "Altın", silver: "Gümüş", bronze: "Bronz",
-    chestRatesNote:
-      "400 puandan itibaren altın, 300'den itibaren gümüş. Benzetimle ölçüldü: her öneriyi takip " +
-      "eden oyunlar, alışılmış hızlı oynayışa karşı — 6/7/8 dışında her şeyi at ve aynı renkli " +
-      "diziyi al. O oynayış en fazla 300 puanda kalır, yani asla altın sandık veremez.",
     session: "Oturum", games: "Tur", avgScore: "Ort. puan", reset: "Sıfırla",
     globalAllTime: "Herkes, tüm zamanlar",
     globalNote: "Tur sıfırlanınca sayılır. Herkese açık sayaçlar, hesap yok.",
@@ -309,6 +308,10 @@ const STRINGS = {
       "cinci cărți de pe teren și îți spune dacă să iei o mână acum sau să arunci o carte și să " +
       "tragi din nou. Spre final nu mai estimează, ci rezolvă poziția exact.",
     practice: "Exersare",
+    awaitingCards: (p) => p.n === 1
+      ? "Ce carte ți-a dat jocul? Dă clic mai jos."
+      : `Ce ${p.n} cărți ți-a dat jocul? Dă clic mai jos.`,
+
     doneTitle: "Gata — un cufăr mai bun nu mai e posibil",
     doneBody: (p) => `Ai terminat cu ${p.score} puncte, adică un cufăr de ${p.tier}. Nici cu cele mai bune cărți rămase nu se mai pot atinge ${p.next} puncte — de aici înainte nimic nu mai schimbă recompensa.`,
     doneGold: (p) => `Ai terminat cu ${p.score} puncte — cufăr de aur, mai bine nu se poate. Nu mai e nimic de îmbunătățit.`,
@@ -333,10 +336,6 @@ const STRINGS = {
     colFollowing: "Urmând ajutorul",
     col678: "Doar 6-7-8",
     gold: "Aur", silver: "Argint", bronze: "Bronz",
-    chestRatesNote:
-      "Aur de la 400 de puncte, argint de la 300. Măsurat în simulare: partide în care s-a urmat " +
-      "fiecare sugestie, față de jocul rapid obișnuit — arunci tot în afară de 6/7/8 și iei " +
-      "secvența de aceeași culoare. Acel joc se oprește la 300 de puncte, deci nu poate da niciodată aur.",
     session: "Sesiune", games: "Runde", avgScore: "Punctaj mediu", reset: "Resetează",
     globalAllTime: "Toți, din totdeauna",
     globalNote: "Se numără la resetarea rundei. Contoare publice, fără conturi.",
@@ -387,6 +386,10 @@ const STRINGS = {
       "cinco cartas del campo y te dice si conviene coger una mano ahora o descartar una carta y " +
       "robar de nuevo. Cerca del final deja de estimar y resuelve la posición de forma exacta.",
     practice: "Práctica",
+    awaitingCards: (p) => p.n === 1
+      ? "¿Qué carta te dio el juego? Haz clic abajo."
+      : `¿Qué ${p.n} cartas te dio el juego? Haz clic abajo.`,
+
     doneTitle: "Listo — no hay cofre mejor posible",
     doneBody: (p) => `Terminas con ${p.score} puntos, es decir un cofre de ${p.tier}. Ni con las mejores cartas que quedan se pueden alcanzar ${p.next} puntos — a partir de aquí nada cambia la recompensa.`,
     doneGold: (p) => `Terminas con ${p.score} puntos — cofre de oro, el mejor que hay. No queda nada por mejorar.`,
@@ -411,10 +414,6 @@ const STRINGS = {
     colFollowing: "Siguiendo esto",
     col678: "Solo 6-7-8",
     gold: "Oro", silver: "Plata", bronze: "Bronce",
-    chestRatesNote:
-      "Oro a partir de 400 puntos, plata a partir de 300. Medido en simulación: partidas siguiendo " +
-      "cada sugerencia frente a la forma rápida habitual — descartar todo salvo 6/7/8 y coger la " +
-      "escalera del mismo color. Esa forma se queda en 300 puntos, así que nunca puede dar oro.",
     session: "Sesión", games: "Rondas", avgScore: "Puntos medios", reset: "Reiniciar",
     globalAllTime: "Todos, desde siempre",
     globalNote: "Se cuenta al reiniciar la ronda. Contadores públicos, sin cuentas.",
@@ -465,6 +464,10 @@ const STRINGS = {
       "na stole, a powie ci, czy wziąć układ teraz, czy odrzucić kartę i dobrać nową. Pod koniec " +
       "przestaje szacować i liczy pozycję dokładnie.",
     practice: "Trening",
+    awaitingCards: (p) => p.n === 1
+      ? "Jaką kartę dała gra? Kliknij ją poniżej."
+      : `Jakie ${p.n} karty dała gra? Kliknij je poniżej.`,
+
     doneTitle: "Koniec — lepsza skrzynia nie jest możliwa",
     doneBody: (p) => `Kończysz z wynikiem ${p.score} punktów, czyli ${p.tier} skrzynia. Nawet z najlepszymi pozostałymi kartami ${p.next} punktów już nie osiągniesz — od tego momentu nic nie zmieni nagrody.`,
     doneGold: (p) => `Kończysz z wynikiem ${p.score} punktów — złota skrzynia, najlepsza z możliwych. Nie ma czego poprawiać.`,
@@ -489,10 +492,6 @@ const STRINGS = {
     colFollowing: "Z pomocnikiem",
     col678: "Tylko 6-7-8",
     gold: "Złota", silver: "Srebrna", bronze: "Brązowa",
-    chestRatesNote:
-      "Złota od 400 punktów, srebrna od 300. Zmierzone w symulacji: gry, w których stosowano każdą " +
-      "podpowiedź, kontra zwykła szybka gra — wyrzucasz wszystko poza 6/7/8 i bierzesz sekwens w " +
-      "jednym kolorze. Tamta gra kończy się na 300 punktach, więc nigdy nie da złotej skrzyni.",
     session: "Sesja", games: "Rundy", avgScore: "Śr. punkty", reset: "Reset",
     globalAllTime: "Wszyscy, od zawsze",
     globalNote: "Liczone przy resecie rundy. Publiczne liczniki, bez kont.",
