@@ -1686,3 +1686,20 @@ body.minimal-ui .long-form { display: none; }
 body.awaiting-cards .palette-area .board-label {
   color: var(--accent);
 }
+
+/* The palette is where the missing cards get entered, so it glows while the
+   helper is waiting for them. Same gold as the slot outlines and the same
+   pulse rhythm, so the empty slots and the palette read as one instruction:
+   "these cards, from here". */
+body.awaiting-cards .okey-palette {
+  border-color: var(--accent);
+  animation: paletteAwait 1.5s ease-in-out infinite;
+}
+@keyframes paletteAwait {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(242, 201, 76, 0.28), 0 0 14px 0 rgba(242, 201, 76, 0.10);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(242, 201, 76, 0.07), 0 0 22px 3px rgba(242, 201, 76, 0.22);
+  }
+}
