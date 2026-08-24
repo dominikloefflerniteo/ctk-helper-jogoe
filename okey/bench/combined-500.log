@@ -1,0 +1,13 @@
+Okey solver benchmark — 500 games/config, seed 1
+chests: gold >= 400, silver >= 300, else bronze
+
+policy        avg score     sd   median    p90    max   gold   silver   bronze   picks  disc
+----------------------------------------------------------------------------------------------------
+greedy       146.3    71.9     140    240    370    0.0%     2.8%    97.2%    8.00   0.00
+v1 OC=5      265.0    64.0     260    350    440    2.2%    29.8%    68.0%    4.83   8.38
+v2 L=6       292.3    61.6     300    360    470    4.8%    46.8%    48.4%    3.95  11.03
+roll balanced 305.9    54.0     310    380    460    6.6%    60.8%    32.6%    4.36   9.47
+combo (ship) 278.5    76.9     300    350    450    7.2%    61.0%    31.8%    4.29   9.06
+
+best by gold+silver rate: combo (ship) (7.2% gold, 61.0% silver, avg 278.5)
+best by average score:    roll balanced (avg 305.9)

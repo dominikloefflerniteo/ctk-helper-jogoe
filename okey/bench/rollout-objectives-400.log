@@ -1,0 +1,15 @@
+Okey solver benchmark — 400 games/config, seed 1
+chests: gold >= 400, silver >= 300, else bronze
+
+policy        avg score     sd   median    p90    max   gold   silver   bronze   picks  disc
+----------------------------------------------------------------------------------------------------
+greedy       148.1    74.0     140    250    370    0.0%     3.5%    96.5%    8.00   0.00
+v1 OC=5      264.9    64.9     260    350    440    2.0%    31.5%    66.5%    4.87   8.21
+v2 L=6       291.7    63.6     300    370    470    5.0%    45.8%    49.3%    3.93  11.04
+roll silver  302.4    52.6     300    370    470    4.0%    62.0%    34.0%    4.40   9.32
+roll balanced 303.9    53.4     310    370    460    5.8%    61.5%    32.8%    4.36   9.45
+roll gold    297.4    57.6     300    370    460    6.3%    53.3%    40.5%    4.25   9.79
+roll points  312.3    52.6     310    380    470    6.3%    55.8%    38.0%    4.58   8.76
+
+best by gold+silver rate: roll balanced (5.8% gold, 61.5% silver, avg 303.9)
+best by average score:    roll points (avg 312.3)

@@ -1,0 +1,10 @@
+import { EndgameSolver, maskOf } from "../endgame.js";
+const s = new EndgameSolver();
+const avail = maskOf(["R6", "R7", "R8", "B3", "Y5", "R5"]);
+const board = maskOf(["R6", "R7", "R8", "B3", "Y5"]);
+const t0 = Date.now();
+const v = s.solve(avail, board);
+console.log("value curve:", Array.from(v).map((x, i) => `${i * 10}:${x.toFixed(2)}`).join("  "));
+console.log("best for need 100:", JSON.stringify(s.bestMove(avail, board, 100)));
+console.log("best for need 40 :", JSON.stringify(s.bestMove(avail, board, 40)));
+console.log(`nodes ${s.nodes}, ${Date.now() - t0} ms`);

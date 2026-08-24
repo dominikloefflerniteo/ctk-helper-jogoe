@@ -1,0 +1,14 @@
+Okey solver benchmark — 120 games/config, seed 1
+chests: gold >= 400, silver >= 300, else bronze
+
+policy        avg score     sd   median    p90    max   gold   silver   bronze   picks  disc
+----------------------------------------------------------------------------------------------------
+greedy       148.7    78.5     140    260    370    0.0%     3.3%    96.7%    8.00   0.00
+v1 OC=5      270.7    66.1     280    350    400    2.5%    37.5%    60.0%    4.83   8.31
+v2 L=6       302.3    56.9     300    370    470    4.2%    52.5%    43.3%    4.06  10.65
+leaf=0       306.1    52.6     310    380    450    5.8%    60.0%    34.2%    4.42   9.28
+leaf=8       308.8    50.1     310    370    450    5.0%    62.5%    32.5%    4.44   9.18
+leaf=10      310.7    49.3     310    370    450    4.2%    66.7%    29.2%    4.47   9.08
+
+best by gold+silver rate: leaf=10 (4.2% gold, 66.7% silver, avg 310.7)
+best by average score:    leaf=10 (avg 310.7)

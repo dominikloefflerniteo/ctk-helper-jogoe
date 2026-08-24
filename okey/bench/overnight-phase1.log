@@ -1,0 +1,8 @@
+[shard 7/9] phase 1: 9 configs, 1000 games each, deadline 24/08/2026, 03:15:00
+[shard 8] {"policy":"combo","objective":"balanced","N":8,"exactLeaf":8,"exactMaxCards":13} -> silver+ 55.6% gold 3.9% avg 295.9 (1336s)[[shard 2] {"policy":"combo","objective":"balanced","N":8,"exactLeaf":10,"exactMaxCards":13} -> silver+ 56.2% gold 4.4% avg 295.9 (3602s[s[shard 5] {"policy":"combo","objective":"balanced","N":12,"exactLeaf":10,"exactMaxCards":13} -> silver+ 60.9% gold 5.8% avg 301.7 (452[sh[shard 8] {"policy":"combo","objective":"balanced","N":16,"exactLeaf":10,"exactMaxCards":13} -> silver+ 65.9% gold 6.4% avg 307.5 (5113s)
+[shard 8] stopping early: -27 min left, a config takes ~36 min
+[shard 8] finished 4/8 configs
+ver+ 67.6% gold 5.8% avg 307.6 (913s)
+[shard 0] {"policy":"combo","objective":"balanced","N":24,"exactLeaf":10,"exactMaxCards":10} -> silver+ 67.5% gold 6.0% avg 307.4 (5240s)
+[shard 0] stopping early: -65 min left, a config takes ~30 min
+[shard 0] finished 6/9 configs

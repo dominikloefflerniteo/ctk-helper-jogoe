@@ -1,0 +1,11 @@
+[11:10:34] verification starting: 3000 games x 2 configs x 4 seeds, deadline 2026-08-24T14:30
+[shard 1/2] phase 5: 1 configs, 3000 games each, deadline 24/08/2026, 14:30:00
+[shard 1] {"policy":"combo","objective":"balanced","N":16,"exactLeaf":8} -> silver+ 62.9% gold 6.2% avg 304.3 (4217s)
+[shard 1] finished 1/1 configs
+[12:20:51] verification done
+
+pooled over fresh seeds (never used for ranking)
+games   silver+   gold     avg    seeds   config
+--------------------------------------------------------------------------------------------
+ 12000    64.8% +-0.9   6.4%   306.8   2,3,4,5   {"policy":"combo","objective":"balanced"}
+ 12000    62.9% +-0.9   6.3%   304.5   2,3,4,5   {"policy":"combo","objective":"balanced","N":16,"exactLeaf":8}

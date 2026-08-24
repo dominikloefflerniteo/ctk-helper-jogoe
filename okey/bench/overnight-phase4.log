@@ -1,0 +1,36 @@
+node:fs:439
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+
+Error: ENOENT: no such file or directory, open 'C:\Users\Jogoe\Documents\GitHub\ctk-helper-jogoe\okey\bench\overnight-phase4-configs.json'
+    at Object.readFileSync (node:fs:439:20)
+    at fileConfigs (file:///C:/Users/Jogoe/Documents/GitHub/ctk-helper-jogoe/okey/bench/overnight.mjs:152:24)
+    at file:///C:/Users/Jogoe/Documents/GitHub/ctk-helper-jogoe/okey/bench/overnight.mjs:155:51
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\Jogoe\\Documents\\GitHub\\ctk-helper-jogoe\\okey\\bench\\overnight-phase4-configs.json'
+}
+
+Node.js v24.13.0
+node:fs:439
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+
+Error: ENOENT: no such file or directory, open 'C:\Users\Jogoe\Documents\GitHub\ctk-helper-jogoe\okey\bench\overnight-phase4-configs.json'
+    at Object.readFileSync (node:fs:439:20)
+    at fileConfigs (file:///C:/Users/Jogoe/Documents/GitHub/ctk-helper-jogoe/okey/bench/overnight.mjs:152:24)
+    at file:///C:/Users/Jogoe/Documents/GitHub/ctk-helper-jogoe/okey/bench/overnight.mjs:155:51
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\Jogoe\\Documents\\GitHub\\ctk-helper-jogoe\\okey\\bench\\overnight-phase4-configs.json'
+}
+
+Node.js v24.13.0

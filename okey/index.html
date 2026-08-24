@@ -3,27 +3,49 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Okey helper für gekkox3 uwu owo &lt;3</title>
+  <title>Okey Helper – Metin2 Card Event Solver</title>
+  <meta name="description" content="Free open-source helper for the Metin2 Okey card event. Enter the five cards on the field and it tells you whether to take a hand or throw a card — exactly solved in the endgame." />
+  <meta name="keywords" content="Okey, Metin2 Okey, Metin2 Helfer, Metin2 Helper, Metin2 Solver, Kartenevent, Okey Truhe, Okey Karten, Goldtruhe, Silbertruhe" />
+  <meta name="author" content="Jogoe" />
+  <link rel="canonical" href="https://dominikloefflerniteo.github.io/ctk-helper-jogoe/okey/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Okey Helper – Metin2 Card Event Solver" />
+  <meta property="og:description" content="Solver for the Metin2 Okey card event: take the hand or throw a card? Exact endgame solution and live chest odds." />
+  <meta property="og:url" content="https://dominikloefflerniteo.github.io/ctk-helper-jogoe/okey/" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:locale:alternate" content="de_DE" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
-    <h1>Okey helper <span class="subtle">— pick the best 3 of 5</span></h1>
+    <div class="header-left">
+      <h1>Okey helper <span class="subtle" data-i18n="subtitle">pick the best 3 of 5</span></h1>
+    </div>
+    <p class="page-intro" data-i18n-html="pageIntro"></p>
     <div class="header-meta">
       <div class="header-controls">
-        <label class="practice-toggle" title="Practice mode — auto-draws cards from the deck so you can play through a full game">
-          <span class="practice-toggle-text">Practice</span>
+        <div class="lang-switcher" role="group" aria-label="Language">
+          <button type="button" class="lang-btn" data-lang="en">EN</button>
+          <button type="button" class="lang-btn" data-lang="de">DE</button>
+          <button type="button" class="lang-btn" data-lang="tr">TR</button>
+          <button type="button" class="lang-btn" data-lang="ro">RO</button>
+          <button type="button" class="lang-btn" data-lang="es">ES</button>
+          <button type="button" class="lang-btn" data-lang="pl">PL</button>
+        </div>
+        <label class="practice-toggle" data-i18n-title="practiceTitle">
+          <span class="practice-toggle-text" data-i18n="practice">Practice</span>
           <input type="checkbox" id="practiceToggle" />
           <span class="practice-toggle-slider"></span>
         </label>
         <div class="header-toggles" role="group" aria-label="Toggles">
-          <button id="minimalUiBtn" class="icon-toggle" type="button" aria-label="Toggle minimal UI" title="Toggle minimal UI">
+          <button id="minimalUiBtn" class="icon-toggle" type="button" aria-label="Toggle minimal UI" data-i18n-title="minimalUi">
             <span class="icon-on">▦</span><span class="icon-off">□</span>
           </button>
         </div>
       </div>
       <span class="discord">discord: @jogoe</span>
-      <span class="version">okey · v0.1</span>
+      <span class="version">okey · v0.2<span class="version-views" id="versionViews"></span></span>
     </div>
   </header>
 
@@ -31,118 +53,150 @@
   <main>
     <aside class="stats-panel">
       <div class="info-block">
-        <div class="label">Chest tiers</div>
-        <ul class="chest-list">
-          <li class="chest-row chest-gold">
-            <span class="chest-name">Gold</span>
-            <span class="chest-target">&ge;400</span>
-          </li>
-          <li class="chest-row chest-silver">
-            <span class="chest-name">Silver</span>
-            <span class="chest-target">300&ndash;399</span>
-          </li>
-          <li class="chest-row chest-bronze">
-            <span class="chest-name">Bronze</span>
-            <span class="chest-target">&lt;300</span>
-          </li>
-        </ul>
-        <div class="chest-note">8 rounds per set · 100 pts max per round</div>
+        <div class="label" data-i18n="chestRates">Chest rates</div>
+        <table class="compare">
+          <thead>
+            <tr>
+              <th></th>
+              <th class="cmp-us" data-i18n="colFollowing">Following this</th>
+              <th data-i18n="col678">6-7-8 only</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="chest-name chest-gold" data-i18n="gold">Gold</td>
+              <td class="cmp-us">6.4%</td>
+              <td class="cmp-them">0%</td>
+            </tr>
+            <tr>
+              <td class="chest-name chest-silver" data-i18n="silver">Silver</td>
+              <td class="cmp-us">58.4%</td>
+              <td class="cmp-them">35.8%</td>
+            </tr>
+            <tr>
+              <td class="chest-name chest-bronze" data-i18n="bronze">Bronze</td>
+              <td class="cmp-us">35.2%</td>
+              <td class="cmp-them">64.2%</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="chest-note" data-i18n="chestRatesNote"></div>
       </div>
 
       <div class="info-block">
-        <div class="label">Scoring</div>
-        <ul class="scoring-list">
-          <li><span class="scoring-name">Three of a kind</span> <span class="scoring-range">20&ndash;90</span></li>
-          <li><span class="scoring-name">Same-color run</span>  <span class="scoring-range">50&ndash;100</span></li>
-          <li><span class="scoring-name">Mixed run</span>       <span class="scoring-range">10&ndash;60</span></li>
-        </ul>
-        <div class="chest-note">Best run: same-color 6&ndash;7&ndash;8 = 100 pts</div>
-      </div>
-
-      <div class="info-block">
-        <div class="label">Session</div>
+        <div class="label" data-i18n="session">Session</div>
         <ul class="session-list">
           <li class="session-row">
-            <span class="session-name">Games</span>
+            <span class="session-name" data-i18n="games">Games</span>
             <span><span id="sessionGames">0</span></span>
           </li>
           <li class="session-row">
-            <span class="session-name">Avg score</span>
+            <span class="session-name" data-i18n="avgScore">Avg score</span>
             <span><span id="sessionAvg">—</span></span>
           </li>
           <li class="session-row">
-            <span class="session-name chest-gold">Gold</span>
+            <span class="session-name chest-gold" data-i18n="gold">Gold</span>
             <span><span id="sessionGold">0</span>&nbsp;<span id="sessionPctGold" class="session-pct"></span></span>
           </li>
           <li class="session-row">
-            <span class="session-name chest-silver">Silver</span>
+            <span class="session-name chest-silver" data-i18n="silver">Silver</span>
             <span><span id="sessionSilver">0</span>&nbsp;<span id="sessionPctSilver" class="session-pct"></span></span>
           </li>
           <li class="session-row">
-            <span class="session-name chest-bronze">Bronze</span>
+            <span class="session-name chest-bronze" data-i18n="bronze">Bronze</span>
             <span><span id="sessionBronze">0</span>&nbsp;<span id="sessionPctBronze" class="session-pct"></span></span>
           </li>
         </ul>
-        <button id="sessionResetBtn" class="action-btn session-reset" type="button">Reset</button>
+        <button id="sessionResetBtn" class="action-btn session-reset" type="button" data-i18n="reset">Reset</button>
       </div>
 
-      <div class="promo-text">
-        See also the <a href="../ctk/">Catch the King helper</a>.
+      <div class="info-block">
+        <div class="label" data-i18n="globalAllTime">Everyone, all time</div>
+        <ul class="session-list">
+          <li class="session-row">
+            <span class="session-name" data-i18n="games">Games</span>
+            <span><span id="globalGames">…</span></span>
+          </li>
+          <li class="session-row">
+            <span class="session-name chest-gold" data-i18n="gold">Gold</span>
+            <span><span id="globalGold">…</span>&nbsp;<span id="globalPctGold" class="session-pct"></span></span>
+          </li>
+          <li class="session-row">
+            <span class="session-name chest-silver" data-i18n="silver">Silver</span>
+            <span><span id="globalSilver">…</span>&nbsp;<span id="globalPctSilver" class="session-pct"></span></span>
+          </li>
+          <li class="session-row">
+            <span class="session-name chest-bronze" data-i18n="bronze">Bronze</span>
+            <span><span id="globalBronze">…</span>&nbsp;<span id="globalPctBronze" class="session-pct"></span></span>
+          </li>
+        </ul>
+        <div class="chest-note" data-i18n="globalNote"></div>
       </div>
+
+      <div class="like-block">
+        <p class="like-prompt" data-i18n="likePrompt">Enjoying the helper? Drop a like!</p>
+        <button id="likeBtn" class="like-btn" type="button" aria-label="Like" title="Like">
+          <span class="like-heart">&#9829;</span>
+          <span id="likeCount" class="like-count">&hellip;</span>
+        </button>
+      </div>
+
+      <div class="promo-text" data-i18n-html="supportText"></div>
+      <div class="promo-text" data-i18n-html="otherHelpers"></div>
     </aside>
 
     <section class="board-panel">
       <div class="board-area">
-        <div class="board-label">Cards on the field</div>
+        <div class="board-label" data-i18n="boardLabel">Cards on the field</div>
         <div id="board" class="okey-board" aria-label="5-card Okey board"></div>
       </div>
 
       <div class="palette-area">
-        <div class="board-label">Add a card to the next empty slot</div>
+        <div class="board-label" data-i18n="paletteLabel">Add a card to the next empty slot</div>
         <div id="palette" class="okey-palette" aria-label="Card palette"></div>
       </div>
 
       <div class="help">
-        <p>Pick the 3 cards that score the most. <em>Click a palette card</em> to drop it into the next empty slot, then click cards on the field to mark your pick. Used cards grey out in the palette so you can't pick the same card twice.</p>
+        <p data-i18n-html="helpIntro"></p>
         <ul>
-          <li><kbd>R</kbd> / <kbd>B</kbd> / <kbd>Y</kbd> + <kbd>1</kbd>&ndash;<kbd>8</kbd> &mdash; type a card directly</li>
-          <li><strong>Click</strong> a card on the field &mdash; toggle it in your pick</li>
-          <li><strong>Right-click</strong> a card on the field &mdash; discard it (then enter the new card the game gave you)</li>
-          <li><kbd>Space</kbd> &mdash; auto-select the suggested 3</li>
-          <li><kbd>Enter</kbd> &mdash; confirm the pick</li>
-          <li><kbd>Backspace</kbd> &mdash; undo · <kbd>Esc</kbd> &mdash; reset (logs the run to session)</li>
+          <li><kbd>R</kbd> / <kbd>B</kbd> / <kbd>Y</kbd> + <kbd>1</kbd>&ndash;<kbd>8</kbd> &mdash; <span data-i18n="help1"></span></li>
+          <li><kbd>Click</kbd> &mdash; <span data-i18n="help2"></span></li>
+          <li><kbd>Right-click</kbd> &mdash; <span data-i18n="help3"></span></li>
+          <li><kbd>Space</kbd> &mdash; <span data-i18n="help4"></span></li>
+          <li><kbd>Enter</kbd> &mdash; <span data-i18n="help5"></span></li>
+          <li><kbd>Backspace</kbd> / <kbd>Esc</kbd> &mdash; <span data-i18n="help6"></span></li>
         </ul>
       </div>
     </section>
 
     <aside class="info-panel">
       <div class="info-block button-row">
-        <button id="confirmBtn" class="action-btn confirm-btn" type="button" disabled>Confirm pick</button>
+        <button id="confirmBtn" class="action-btn confirm-btn" type="button" disabled data-i18n="confirmPick">Confirm pick</button>
       </div>
 
       <div class="info-block button-row">
-        <button id="undoBtn" class="action-btn" type="button" disabled>Undo</button>
-        <button id="resetBtn" class="reset-btn" type="button">Reset</button>
+        <button id="undoBtn" class="action-btn" type="button" disabled data-i18n="undo">Undo</button>
+        <button id="resetBtn" class="reset-btn" type="button" data-i18n="reset">Reset</button>
       </div>
 
       <div class="info-block">
-        <div class="label">Score</div>
+        <div class="label" data-i18n="scoreLabel">Score</div>
         <div id="score" class="score">0</div>
-        <div class="score-target">target 400 (gold)</div>
+        <div class="score-target" data-i18n="scoreTarget">target 400 (gold)</div>
         <div id="scoreCeiling" class="score-ceiling"></div>
         <div id="chestProjection" class="chest-projection"></div>
       </div>
 
       <div class="info-block">
-        <div class="label">Your pick</div>
+        <div class="label" data-i18n="yourPick">Your pick</div>
         <div id="pickTotal" class="pick-total">0/3</div>
-        <div id="pickLabel" class="pick-label">Click cards on the board to pick.</div>
+        <div id="pickLabel" class="pick-label" data-i18n="pickHint">Click cards on the field to pick.</div>
       </div>
 
       <div class="info-block">
-        <div class="label">Suggestion</div>
+        <div class="label" data-i18n="suggestion">Suggestion</div>
         <div id="suggestionNote" class="suggestion-note">—</div>
-        <button id="acceptSuggestionBtn" class="action-btn" type="button" disabled>Use suggestion</button>
+        <button id="acceptSuggestionBtn" class="action-btn" type="button" disabled data-i18n="useSuggestion">Use suggestion</button>
       </div>
     </aside>
   </main>
@@ -150,20 +204,148 @@
   <aside class="chat-panel">
     <div class="info-block chat-block">
       <div class="label">
-        <span>Chat</span>
+        <span data-i18n="twitchChat">Chat</span>
       </div>
-      <div id="twitchChatMount" class="twitch-chat-mount"></div>
+      <div id="twitchChatMount" class="twitch-chat-mount">
+        <div id="twitchConsent" class="twitch-consent">
+          <p data-i18n-html="twitchConsentBody"></p>
+          <button id="twitchConsentBtn" type="button" class="action-btn" data-i18n="twitchConsentBtn">Load Twitch chat</button>
+        </div>
+      </div>
     </div>
   </aside>
   </div>
 
+  <article class="long-form" id="guide">
+    <section lang="de" class="long-form-section">
+      <h2>Okey in Metin2 &ndash; Regeln, Punkte und Strategie</h2>
+      <p>
+        Beim <strong>Okey</strong>-Kartenevent liegen f&uuml;nf Karten offen vor dir. Du kannst
+        entweder <em>drei davon nehmen</em> und daf&uuml;r Punkte kassieren, oder <em>eine Karte
+        abwerfen</em> und sofort eine neue nachziehen. Abgeworfene und genommene Karten sind f&uuml;r
+        den Rest der Runde weg &ndash; das Kartendeck besteht aus 24 einzigartigen Karten
+        (Werte 1 bis 8 in drei Farben), und jede kommt genau einmal vor.
+      </p>
+      <h3>Punkte</h3>
+      <ul>
+        <li><strong>Drilling</strong> (dreimal derselbe Wert): 20 bis 90 Punkte, steigend mit dem Wert.</li>
+        <li><strong>Farbgleiche Reihe</strong> (drei aufeinanderfolgende Werte in einer Farbe): 50 bis 100 Punkte.</li>
+        <li><strong>Gemischte Reihe</strong> (drei aufeinanderfolgende Werte, verschiedene Farben): 10 bis 60 Punkte.</li>
+      </ul>
+      <p>
+        Die beste Einzelhand ist die farbgleiche <strong>6-7-8</strong> mit 100 Punkten. Am Ende
+        entscheidet die Gesamtpunktzahl &uuml;ber die Truhe: ab 300 Punkten Silber, ab 400 Gold.
+      </p>
+      <h3>Warum &bdquo;nur auf 6-7-8 spielen&ldquo; bei 300 Punkten endet</h3>
+      <p>
+        Die verbreitetste Spielweise ist, alles au&szlig;er Sechsen, Siebenen und Achten wegzuwerfen
+        und nur die farbgleichen 6-7-8 zu nehmen. Das ist schnell, aber es gibt genau drei solche
+        Reihen &ndash; eine pro Farbe. Mehr als <strong>300 Punkte sind so rechnerisch unm&ouml;glich</strong>,
+        und 300 ist exakt die Silberschwelle. Wer so spielt, kann nie eine Goldtruhe bekommen.
+        In der Simulation erreicht diese Spielweise in etwa jeder dritten Runde Silber.
+      </p>
+      <h3>Was der Helfer anders macht</h3>
+      <p>
+        Weil das Deck aus 24 bekannten Karten besteht, wei&szlig; der Helfer jederzeit exakt, welche
+        Karten noch kommen k&ouml;nnen. Solange viele Karten im Spiel sind, spielt er tausende
+        Fortsetzungen durch und w&auml;hlt den Zug mit der besten Truhenchance. Sobald nur noch wenige
+        Karten &uuml;brig sind, sch&auml;tzt er nicht mehr, sondern <strong>rechnet die Stellung exakt
+        aus</strong> &ndash; inklusive der Frage, ob sich das Risiko auf Gold noch lohnt oder ob
+        Silber gesichert werden sollte.
+      </p>
+      <p>
+        Wichtig ist dabei die Erkenntnis, dass Punkte und Truhen nicht dasselbe sind: Bei 250 Punkten
+        und einer verbleibenden Runde bringt eine 30-Punkte-Hand gar nichts, w&auml;hrend sie bei 280
+        Punkten die ganze Runde rettet. Genau diese Unterscheidung trifft der Helfer automatisch.
+      </p>
+    </section>
+
+    <section lang="en" class="long-form-section">
+      <h2>Okey in Metin2 &ndash; rules, scoring and strategy</h2>
+      <p>
+        In the <strong>Okey</strong> card event, five cards lie face up in front of you. You can
+        either <em>take three of them</em> and score, or <em>throw one card away</em> and immediately
+        draw a replacement. Cards you take or throw are gone for the rest of the run &ndash; the deck
+        holds 24 unique cards (values 1 to 8 in three colours) and each appears exactly once.
+      </p>
+      <h3>Scoring</h3>
+      <ul>
+        <li><strong>Three of a kind</strong>: 20 to 90 points, rising with the value.</li>
+        <li><strong>Same-colour run</strong> (three consecutive values, one colour): 50 to 100 points.</li>
+        <li><strong>Mixed run</strong> (three consecutive values, different colours): 10 to 60 points.</li>
+      </ul>
+      <p>
+        The best single hand is the same-colour <strong>6-7-8</strong> for 100 points. The chest is
+        decided by the total: silver from 300 points, gold from 400.
+      </p>
+      <h3>Why the &ldquo;6-7-8 only&rdquo; rush stops at 300</h3>
+      <p>
+        The most common way to play is to bin everything except sixes, sevens and eights and take
+        only same-colour 6-7-8 runs. It is fast, but there are exactly three such runs &ndash; one per
+        colour. That makes <strong>more than 300 points arithmetically impossible</strong>, and 300 is
+        precisely the silver line, so this approach can never produce a gold chest. In simulation it
+        reaches silver in roughly one run out of three.
+      </p>
+      <h3>What the helper does instead</h3>
+      <p>
+        Because the deck is 24 known cards, the helper always knows exactly which cards can still
+        come. While many cards are in play it rolls out thousands of continuations and picks the move
+        with the best chest odds. Once few cards remain it stops estimating and <strong>solves the
+        position exactly</strong> &ndash; including whether chasing gold is still worth the risk or
+        whether silver should be locked in.
+      </p>
+      <p>
+        The key idea is that points and chests are not the same thing: at 250 with one round left, a
+        30-point hand is worth nothing, while at 280 the same hand saves the run. The helper makes
+        that distinction for you.
+      </p>
+    </section>
+  </article>
+
   <footer>
-    <span class="subtle">Clean-room helper for Metin2 &middot; Okey-Karten-Spiel</span>
+    <span class="subtle" data-i18n="footer">Clean-room helper for Metin2 &middot; Okey</span>
+    <span class="footer-sep">&middot;</span>
+    <button class="footer-link" type="button" onclick="location.href='../'" data-i18n="allHelpers">All helpers</button>
+    <span class="footer-sep">&middot;</span>
+    <button class="footer-link" type="button" data-open-modal="impressumModal" data-i18n="impressum">Imprint</button>
+    <span class="footer-sep">&middot;</span>
+    <button class="footer-link" type="button" data-open-modal="datenschutzModal" data-i18n="privacy">Privacy</button>
   </footer>
+
+  <div id="impressumModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="impressumTitle" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card" tabindex="-1">
+      <button class="modal-close" type="button" aria-label="Close" data-close>&times;</button>
+      <h2 id="impressumTitle" data-i18n="impressumTitle">Imprint</h2>
+      <div data-i18n-html="impressumBody"></div>
+    </div>
+  </div>
+
+  <div id="datenschutzModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="datenschutzTitle" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card" tabindex="-1">
+      <button class="modal-close" type="button" aria-label="Close" data-close>&times;</button>
+      <h2 id="datenschutzTitle" data-i18n="datenschutzTitle">Privacy policy</h2>
+      <div data-i18n-html="datenschutzBody"></div>
+      <div class="datenschutz-controls">
+        <button id="revokeTwitchConsentBtn" type="button" class="action-btn" data-i18n="revokeTwitchConsent">Revoke Twitch chat consent</button>
+      </div>
+    </div>
+  </div>
 
   <button id="chatBtn" class="chat-tab" type="button" aria-label="Toggle chat" title="Toggle chat">
     <span class="chat-tab-arrow"></span>
   </button>
+
+  <div id="runOverlay" class="run-overlay" hidden>
+    <div class="run-overlay-card" role="dialog" aria-modal="true" aria-labelledby="runOverlayTitle">
+      <div class="run-overlay-chest" id="runOverlayChest">&#127942;</div>
+      <h2 id="runOverlayTitle" data-i18n="doneTitle">Done &mdash; no better chest possible</h2>
+      <p id="runOverlayBody"></p>
+      <button id="runOverlayBtn" class="action-btn" type="button" data-i18n="doneNextRun">Start the next run</button>
+      <button id="runOverlayDismiss" class="footer-link" type="button" data-i18n="doneKeepPlaying">keep playing anyway</button>
+    </div>
+  </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 

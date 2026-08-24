@@ -1,0 +1,76 @@
+[
+  {
+    "policy": "combo",
+    "objective": "balanced",
+    "N": 24,
+    "exactLeaf": 10,
+    "exactMaxCards": 10
+  },
+  {
+    "policy": "combo",
+    "objective": "balanced",
+    "N": 24,
+    "exactLeaf": 0,
+    "exactMaxCards": 12
+  },
+  {
+    "policy": "combo",
+    "objective": "balanced",
+    "N": 16,
+    "exactLeaf": 10,
+    "exactMaxCards": 13
+  },
+  {
+    "policy": "combo",
+    "objective": "balanced",
+    "N": 24,
+    "exactLeaf": 0,
+    "exactMaxCards": 10
+  },
+  {
+    "policy": "combo",
+    "objective": "balanced",
+    "N": 16,
+    "exactLeaf": 10,
+    "exactMaxCards": 12
+  },
+  {
+    "policy": "combo",
+    "objective": "balanced",
+    "N": 16,
+    "exactLeaf": 10,
+    "exactMaxCards": 10
+  },
+  {
+    "policy": "combo",
+    "objective": "balanced",
+    "N": 16,
+    "exactLeaf": 0,
+    "exactMaxCards": 13
+  },
+  {
+    "policy": "combo",
+    "objective": "balanced",
+    "N": 16,
+    "exactLeaf": 0,
+    "exactMaxCards": 12
+  },
+  {
+    "policy": "combo",
+    "objective": "balanced",
+    "N": 16,
+    "exactLeaf": 6,
+    "exactMaxCards": 12
+  },
+  {
+    "policy": "combo",
+    "objective": "balanced",
+    "N": 16,
+    "exactLeaf": 0,
+    "exactMaxCards": 10
+  },
+  {
+    "policy": "combo",
+    "objective": "balanced"
+  }
+]

@@ -6,7 +6,8 @@ import {
   createState, addCard, discardSlot, confirmPick, undo, resetState,
   usedCardSet, autoFillBoardFromDeck, BOARD_SIZE, HAND_SIZE, chestForScore,
 } from "./game.js";
-import { suggestMove } from "./solver.js";
+import { suggest, createPolicyCache, chestOutlook } from "./policy.js";
+import { applyToDOM, setLang, onLangChange, t } from "./i18n.js";
 import {
   renderBoard, renderPalette, updateSidebar, updateSessionStats,
 } from "./ui.js";
@@ -38,6 +39,16 @@ const els = {
   twitchChatMount: document.getElementById("twitchChatMount"),
   chatBtn: document.getElementById("chatBtn"),
   minimalUiBtn: document.getElementById("minimalUiBtn"),
+  likeBtn: document.getElementById("likeBtn"),
+  runOverlay: document.getElementById("runOverlay"),
+  runOverlayBody: document.getElementById("runOverlayBody"),
+  runOverlayChest: document.getElementById("runOverlayChest"),
+  runOverlayBtn: document.getElementById("runOverlayBtn"),
+  runOverlayDismiss: document.getElementById("runOverlayDismiss"),
+  likeCount: document.getElementById("likeCount"),
+  twitchConsent: document.getElementById("twitchConsent"),
+  twitchConsentBtn: document.getElementById("twitchConsentBtn"),
+  revokeTwitchConsentBtn: document.getElementById("revokeTwitchConsentBtn"),
 };
 
 // ---------- state ----------
@@ -46,6 +57,15 @@ const state = createState();
 let pickedSlots = new Set();
 let session = loadSession();
 let practiceMode = loadPracticeMode();
+// Table for the exact endgame solver, valid for one game (see policy.js).
+let policyCache = createPolicyCache();
+let lastSuggestion = null;
+// Suggestion cache + async upgrade, see computeSuggestion() below.
+let suggestionCache = { key: null, move: null, strong: false };
+let pendingKey = null;
+// Set when the player dismisses the end-of-run overlay: the run is over by
+// the numbers, but they asked to keep going, so stop nagging until reset.
+let overlayDismissed = false;
 
 const PRACTICE_KEY = "okey-helper.practice.v1";
 function loadPracticeMode() {
@@ -77,7 +97,7 @@ function emptySession() {
 function onPaletteClick(cardId) {
   const slot = addCard(state, cardId);
   if (slot < 0) {
-    toast("Field is full — pick 3 to score, or discard a card first.");
+    toast(t("fieldFull"));
     return;
   }
   refresh();
@@ -112,19 +132,19 @@ function onSlotRightClick(slotIndex) {
 
 function onConfirm() {
   if (pickedSlots.size !== HAND_SIZE) {
-    toast(`Select ${HAND_SIZE} cards first.`);
+    toast(t("select3"));
     return;
   }
   const r = confirmPick(state, [...pickedSlots]);
   pickedSlots.clear();
-  if (r.gained > 0) toast(`+${r.gained} (${r.label})`);
-  else toast(`No combo — 0 points`);
+  if (r.gained > 0) toast(t("scored", { gained: r.gained, label: handLabel(r) }));
+  else toast(t("noCombo"));
   refresh();
 }
 
 function onAcceptSuggestion() {
-  const move = suggestMove(state);
-  if (!move) { toast("Add cards to the field first."); return; }
+  const move = lastSuggestion ?? suggest(state, { cache: policyCache });
+  if (!move) { toast(t("addCardsFirst")); return; }
   if (move.kind === "pick") {
     pickedSlots = new Set(move.slots);
     refresh();
@@ -136,12 +156,12 @@ function onAcceptSuggestion() {
   pickedSlots.clear();
   const slotsDesc = [...move.slots].sort((a, b) => b - a);
   for (const i of slotsDesc) discardSlot(state, i);
-  toast(`Discarded ${move.slots.length} — enter the new card${move.slots.length === 1 ? "" : "s"} from the game.`);
+  toast(t("discarded", { n: move.slots.length }));
   refresh();
 }
 
 function onUndo() {
-  if (!undo(state)) { toast("Nothing to undo."); return; }
+  if (!undo(state)) { toast(t("nothingUndo")); return; }
   pickedSlots.clear();
   refresh();
 }
@@ -158,10 +178,18 @@ function onReset() {
     session.totalScore += finalScore;
     saveSession();
     updateSessionStats(els, session);
-    toast(`Game over — ${tier} chest (${finalScore} pts)`);
+    recordGlobalCompletion(tier);
+    toast(t("gameOver", { tier: t("tier" + tier[0].toUpperCase() + tier.slice(1)), score: finalScore }));
   }
   resetState(state);
   pickedSlots.clear();
+  // New game, new deck: the exact solver's table belongs to the old one.
+  policyCache = createPolicyCache();
+  lastSuggestion = null;
+  suggestionCache = { key: null, move: null, strong: false };
+  pendingKey = null;
+  overlayDismissed = false;
+  hideRunOverlay();
   refresh();
 }
 
@@ -189,7 +217,8 @@ function refresh() {
   // (after confirm, after discard, after toggle, after reset).
   if (practiceMode) autoFillBoardFromDeck(state);
 
-  const move = suggestMove(state);
+  const move = computeSuggestion();
+  lastSuggestion = move;
   const suggested = move ? new Set(move.slots) : null;
   const suggestionKind = move ? move.kind : null;
 
@@ -205,16 +234,284 @@ function refresh() {
   });
   updateSidebar(els, state, { picked: pickedSlots });
 
-  els.suggestionNote.textContent = move ? move.reasoning : "Add cards to the field to see a suggestion.";
+  els.suggestionNote.textContent = move ? adviceText(move) : t("suggestionPlaceholder");
+  els.suggestionNote.classList.toggle("pending", !!move && !suggestionCache.strong);
   els.acceptSuggestionBtn.disabled = !move;
   if (move && move.kind === "discard") {
-    const k = move.slots.length;
-    els.acceptSuggestionBtn.textContent = `Discard ${k} card${k === 1 ? "" : "s"}`;
+    els.acceptSuggestionBtn.textContent = t("discardCards", { n: move.slots.length });
   } else {
-    els.acceptSuggestionBtn.textContent = "Use suggestion";
+    els.acceptSuggestionBtn.textContent = t("useSuggestion");
   }
   els.confirmBtn.disabled = pickedSlots.size !== HAND_SIZE;
   els.undoBtn.disabled = state.history.length === 0;
+
+  checkRunFinished();
+}
+
+
+// ---------- suggestion: cached per position, upgraded off the click ----------
+//
+// Two things used to make every click cost a full search:
+//
+//   1. refresh() ran the solver on every render — including renders where the
+//      POSITION had not changed at all, such as selecting or deselecting a card
+//      for your pick, switching language, or toggling practice mode.
+//   2. the search ran synchronously inside the click handler, so the button
+//      press itself waited for it.
+//
+// Now: a position is searched once and the answer is kept until the position
+// actually changes; and when it does change, the instant heuristic answer is
+// rendered first, with the strong search handed to a timeout so the click can
+// finish painting. The user sees an answer immediately and a better one a
+// moment later, instead of a frozen page.
+//
+// The key covers everything the engines look at: the field, the score, and how
+// many cards have left the deck.
+function positionKey() {
+  return state.board.join(",") + "|" + state.score + "|" + state.consumed.size;
+}
+
+function computeSuggestion() {
+  const key = positionKey();
+  if (suggestionCache.key === key) return suggestionCache.move;
+
+  // Instant answer so the UI has something to draw right now.
+  const quick = suggest(state, { cache: policyCache, mode: "heuristic" });
+  suggestionCache = { key, move: quick, strong: false };
+
+  // Strong answer after the browser has painted this click.
+  if (pendingKey !== key) {
+    pendingKey = key;
+    setTimeout(() => {
+      if (pendingKey !== key) return;      // position moved on meanwhile
+      const strong = suggest(state, { cache: policyCache });
+      pendingKey = null;
+      if (positionKey() !== key) return;   // ditto, after the search
+      suggestionCache = { key, move: strong, strong: true };
+      refresh();
+    }, 0);
+  }
+  return quick;
+}
+
+// ---------- end of run ----------
+//
+// A run is over the moment no better chest can be reached: from there on no
+// sequence of picks or discards changes the reward, so grinding on is wasted
+// time. policy.js works that out exactly once the position is small enough,
+// and from an optimistic bound before that — optimistic on purpose, so the
+// overlay never appears while a better chest is still on.
+
+function hideRunOverlay() {
+  if (els.runOverlay) els.runOverlay.hidden = true;
+}
+
+function checkRunFinished() {
+  if (!els.runOverlay || overlayDismissed) return;
+  // chestOutlook can trigger the exact solve, which is the one expensive call
+  // in here. Only run it on the render that already carries the strong
+  // suggestion — that render happens off the click, so nothing blocks a button
+  // press waiting for it.
+  if (!suggestionCache.strong) return;
+  // Nothing to announce before the run has actually started.
+  if (state.log.length === 0) { hideRunOverlay(); return; }
+
+  const outlook = chestOutlook(state, { cache: policyCache });
+  if (outlook.canImprove) { hideRunOverlay(); return; }
+
+  const tier = chestForScore(state.score);
+  const tierName = t("tier" + tier[0].toUpperCase() + tier.slice(1));
+  if (els.runOverlayChest) {
+    els.runOverlayChest.textContent = tier === "gold" ? "🥇" : tier === "silver" ? "🥈" : "🥉";
+  }
+  if (els.runOverlayBody) {
+    els.runOverlayBody.textContent = outlook.nextThreshold === null
+      ? t("doneGold", { score: state.score })
+      : t("doneBody", { score: state.score, tier: tierName, next: outlook.nextThreshold });
+  }
+  els.runOverlay.hidden = false;
+}
+
+if (els.runOverlayBtn) {
+  els.runOverlayBtn.addEventListener("click", () => { hideRunOverlay(); onReset(); });
+}
+if (els.runOverlayDismiss) {
+  els.runOverlayDismiss.addEventListener("click", () => {
+    overlayDismissed = true;
+    hideRunOverlay();
+  });
+}
+
+
+// ---------- public counters (page opens + chests, everyone all time) ----------
+//
+// Same free counter host the other helpers use: abacus.jasoncameron.dev, a
+// stateless integer counter. /get reads, /hit increments and returns the new
+// value. Nothing but integers leaves the browser — no accounts, no ids, no
+// analytics — and every network error is swallowed, because the helper has to
+// work fine with the counters dead or blocked.
+const ABACUS = "https://abacus.jasoncameron.dev";
+const NS = "okey-helper-jogoe";
+
+// One page-open per load, shown next to the version.
+(async function bumpPageOpens() {
+  const el = document.getElementById("versionViews");
+  if (!el) return;
+  try {
+    const r = await fetch(`${ABACUS}/hit/${NS}/page-opens`);
+    if (!r.ok) return;
+    const d = await r.json();
+    if (Number.isFinite(d.value)) el.textContent = `· ${d.value.toLocaleString()} page opens`;
+  } catch { /* offline or blocked — the line just stays empty */ }
+})();
+
+const GLOBAL_KEYS = ["games", "gold", "silver", "bronze"];
+const globalCounts = { games: null, gold: null, silver: null, bronze: null };
+
+function renderGlobalStats() {
+  const fmt = (v) => (v == null ? "…" : v.toLocaleString());
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set("globalGames", fmt(globalCounts.games));
+  set("globalGold", fmt(globalCounts.gold));
+  set("globalSilver", fmt(globalCounts.silver));
+  set("globalBronze", fmt(globalCounts.bronze));
+  const pct = (n) => (globalCounts.games && n != null ? `(${Math.round((n / globalCounts.games) * 100)}%)` : "");
+  set("globalPctGold", pct(globalCounts.gold));
+  set("globalPctSilver", pct(globalCounts.silver));
+  set("globalPctBronze", pct(globalCounts.bronze));
+}
+
+async function fetchGlobalCount(key) {
+  try {
+    const r = await fetch(`${ABACUS}/get/${NS}/${key}`);
+    if (r.status === 404) return 0; // counter not created yet; /hit creates it
+    if (!r.ok) return null;
+    const d = await r.json();
+    return Number.isFinite(d.value) ? d.value : null;
+  } catch { return null; }
+}
+
+async function fetchAllGlobalCounts() {
+  const results = await Promise.all(GLOBAL_KEYS.map(fetchGlobalCount));
+  for (let i = 0; i < GLOBAL_KEYS.length; i++) {
+    if (results[i] != null) globalCounts[GLOBAL_KEYS[i]] = results[i];
+  }
+  renderGlobalStats();
+}
+
+async function hitGlobal(key) {
+  try {
+    const r = await fetch(`${ABACUS}/hit/${NS}/${key}`);
+    if (!r.ok) return;
+    const d = await r.json();
+    if (Number.isFinite(d.value)) { globalCounts[key] = d.value; renderGlobalStats(); }
+  } catch { /* swallow */ }
+}
+
+// Called when a run is logged locally: bumps the games counter plus exactly one
+// tier, so the percentages always add up.
+function recordGlobalCompletion(tier) {
+  hitGlobal("games");
+  if (GLOBAL_KEYS.includes(tier)) hitGlobal(tier);
+}
+
+// Refresh while the tab is actually being looked at. Four GETs a minute is far
+// inside the host's rate limit and keeps the panel alive during a session.
+fetchAllGlobalCounts();
+setInterval(() => {
+  if (document.visibilityState === "visible") fetchAllGlobalCounts();
+}, 60_000);
+
+
+// ---------- advice wording ----------
+//
+// The engines return structure (which cards, what it scores, and — in the
+// exact phase — the real chest probabilities). The sentence is written here so
+// it can be translated, and so the solver files stay free of user-facing prose.
+
+function handLabel(hand) {
+  if (!hand || !hand.type) return t("handNone");
+  const values = (hand.cards || []).map((c) => Number(c.slice(1))).sort((a, b) => a - b);
+  if (hand.type === "three") return t("handThree", { value: values[0] });
+  if (hand.type === "sameSeq") return t("handSameSeq", { low: values[0] });
+  if (hand.type === "mixedSeq") return t("handMixedSeq", { low: values[0] });
+  return t("handNone");
+}
+
+function adviceText(move) {
+  const pct = (x) => Math.round(x * 100) + "%";
+  let odds = "";
+  if (move.exact) {
+    odds = " " + t("oddsExact", { silver: pct(move.exact.pSilver), gold: pct(move.exact.pGold) });
+  } else if (move.rollout && move.rollout.stats) {
+    odds = " " + t("oddsEstimate", {
+      silver: pct(move.rollout.stats.pSilver),
+      gold: pct(move.rollout.stats.pGold),
+    });
+  }
+  if (move.kind === "pick") {
+    return t("advicePick", { hand: handLabel(move), score: move.score }) + odds;
+  }
+  return t("adviceDiscard", { card: move.cards[0] }) + odds;
+}
+
+// ---------- language ----------
+
+document.querySelectorAll(".lang-btn").forEach((btn) => {
+  btn.addEventListener("click", () => setLang(btn.getAttribute("data-lang")));
+});
+// Static text is swapped by i18n itself; the dynamic parts (suggestion,
+// button labels, session numbers) need a re-render.
+onLangChange(() => refresh());
+applyToDOM();
+
+// ---------- modals (imprint / privacy) ----------
+
+document.querySelectorAll("[data-open-modal]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const modal = document.getElementById(btn.getAttribute("data-open-modal"));
+    if (!modal) return;
+    modal.hidden = false;
+    const card = modal.querySelector(".modal-card");
+    if (card) card.focus();
+  });
+});
+document.querySelectorAll(".modal [data-close]").forEach((el) => {
+  el.addEventListener("click", () => { el.closest(".modal").hidden = true; });
+});
+
+// ---------- like button ----------
+
+const LIKE_LOCAL = "okey-liked-v1";
+function setLikeCount(n) {
+  if (els.likeCount && Number.isFinite(n)) els.likeCount.textContent = n.toLocaleString();
+}
+function markLiked() {
+  if (!els.likeBtn) return;
+  els.likeBtn.classList.add("liked");
+  els.likeBtn.disabled = true;
+}
+async function fetchInitialLikes() {
+  try {
+    const r = await fetch(`${ABACUS}/get/${NS}/likes`);
+    if (r.status === 404) { setLikeCount(0); return; }
+    if (!r.ok) return;
+    const d = await r.json();
+    setLikeCount(d.value);
+  } catch {}
+}
+if (els.likeBtn) {
+  if (localStorage.getItem(LIKE_LOCAL) === "1") markLiked();
+  els.likeBtn.addEventListener("click", async () => {
+    if (localStorage.getItem(LIKE_LOCAL) === "1") return;
+    localStorage.setItem(LIKE_LOCAL, "1");
+    markLiked();
+    try {
+      const r = await fetch(`${ABACUS}/hit/${NS}/likes`);
+      if (r.ok) { const d = await r.json(); setLikeCount(d.value); }
+    } catch {}
+  });
+  fetchInitialLikes();
 }
 
 // ---------- keyboard ----------
@@ -286,6 +583,31 @@ els.practiceToggle.checked = practiceMode;
 els.practiceToggle.addEventListener("change", onPracticeToggle);
 document.body.classList.toggle("practice-on", practiceMode);
 bindToggles();
-mountTwitchChat();
+
+// The embed is third-party (Twitch/Amazon), so it loads only after an explicit
+// click. The choice is remembered locally and can be revoked in the privacy
+// dialog.
+const TWITCH_CONSENT_KEY = "okey-twitch-consent.v1";
+function twitchConsented() {
+  try { return localStorage.getItem(TWITCH_CONSENT_KEY) === "1"; } catch { return false; }
+}
+function loadTwitchChat() {
+  if (els.twitchConsent) els.twitchConsent.remove();
+  mountTwitchChat();
+}
+if (els.twitchConsentBtn) {
+  els.twitchConsentBtn.addEventListener("click", () => {
+    try { localStorage.setItem(TWITCH_CONSENT_KEY, "1"); } catch {}
+    loadTwitchChat();
+  });
+}
+if (els.revokeTwitchConsentBtn) {
+  els.revokeTwitchConsentBtn.addEventListener("click", () => {
+    try { localStorage.removeItem(TWITCH_CONSENT_KEY); } catch {}
+    toast(t("twitchConsentRevoked"));
+  });
+}
+if (twitchConsented()) loadTwitchChat();
+
 updateSessionStats(els, session);
 refresh();

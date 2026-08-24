@@ -135,11 +135,6 @@ main {
   font-weight: 700;
   letter-spacing: 0.3px;
 }
-.chest-target {
-  color: var(--fg-dim);
-  font-size: 11px;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-}
 .chest-pct {
   font-weight: 700;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
@@ -162,6 +157,46 @@ main {
   color: var(--fg-dim);
   font-size: 11px;
 }
+
+/* Chest-rate comparison: what the solver reaches vs how the event is usually
+   played. Two number columns, ours highlighted, theirs dimmed — the point of
+   the panel is the gap between them. */
+.compare {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.compare th {
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  text-align: right;
+  padding: 0 0 6px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+.compare th:first-child { text-align: left; padding-left: 0; }
+.compare td {
+  padding: 5px 0 5px 8px;
+  text-align: right;
+}
+.compare td:first-child {
+  text-align: left;
+  padding-left: 0;
+  font-size: 12px;
+}
+.compare tbody tr + tr td { border-top: 1px solid rgba(255, 255, 255, 0.05); }
+.compare th.cmp-us { color: var(--accent); }
+.compare td.cmp-us { color: var(--fg); font-weight: 700; }
+.compare td.cmp-them { color: var(--fg-dim); }
+
+/* The colour rules above target ".chest-gold .chest-name"; in the comparison
+   table both classes sit on the same cell. */
+.chest-name.chest-gold { color: #f2c94c; }
+.chest-name.chest-silver { color: #bdc7d6; }
+.chest-name.chest-bronze { color: #cd7f32; }
 .session-reset {
   margin-top: 8px;
 }
@@ -1075,8 +1110,10 @@ body.chat-hidden .chat-tab-arrow {
     0 0 14px 4px rgba(242, 201, 76, 0.45);
   animation: okeyPulse 1.4s ease-in-out infinite;
 }
+/* Says what to DO, not that advice exists — it pairs with the "DISCARD" badge
+   below, so the two badges read as the two possible actions. */
 .slot-suggested:not(.slot-picked)::before {
-  content: "HINT";
+  content: "PICK";
   position: absolute;
   top: -10px;
   left: -8px;
@@ -1381,32 +1418,6 @@ body.practice-on .okey-palette {
   text-align: center;
 }
 
-/* ---------- scoring reference list ---------- */
-
-.scoring-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.scoring-list li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: var(--bg-3);
-  border-radius: 4px;
-  padding: 5px 8px;
-  font-size: 12px;
-}
-.scoring-name { color: var(--fg); }
-.scoring-range {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  color: var(--fg-dim);
-  font-size: 11px;
-}
-
 /* ---------- run summary card ---------- */
 
 .run-summary {
@@ -1481,4 +1492,169 @@ body.practice-on .okey-palette {
   background: var(--bg-3);
   color: var(--fg-dim);
   border-color: var(--border);
+}
+
+
+/* ================= shell parity with ctk/seer ================= */
+.header-left {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.header-left h1 { margin: 0; font-size: 15px; line-height: 1.15; letter-spacing: 0.3px; white-space: nowrap; }
+.header-left h1 .subtle { font-size: 11px; }
+.page-intro {
+  margin: 0;
+  flex: 1 1 auto;
+  text-align: center;
+  color: var(--muted, #9aa1ac);
+  font-size: 11px;
+  line-height: 1.35;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.page-intro strong { color: var(--fg, #e7eaef); }
+body.minimal-ui .page-intro { display: none; }
+@media (max-width: 1100px) {
+  .header-left h1 { white-space: normal; }
+  .header-left h1 .subtle { display: none; }
+}
+@media (max-width: 900px) {
+  header { flex-wrap: wrap; }
+  .page-intro { order: 3; flex-basis: 100%; text-align: left; max-width: 100%; }
+}
+
+
+/* ---------- long-form SEO content ---------- */
+.long-form {
+  max-width: 880px;
+  margin: 32px auto 24px;
+  padding: 0 24px;
+  display: grid;
+  gap: 32px;
+}
+.long-form-section {
+  background: var(--panel, #1a1f2a);
+  border: 1px solid var(--border, #2a313e);
+  border-radius: 10px;
+  padding: 20px 24px;
+  color: var(--fg, #e7eaef);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.long-form-section h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  color: var(--fg, #e7eaef);
+}
+.long-form-section h3 {
+  margin: 18px 0 8px;
+  font-size: 15px;
+  color: var(--fg, #e7eaef);
+}
+.long-form-section p { margin: 8px 0; color: var(--muted, #9aa1ac); }
+.long-form-section p strong, .long-form-section li b { color: var(--fg, #e7eaef); }
+.long-form-section ul { margin: 6px 0 10px 22px; color: var(--muted, #9aa1ac); }
+.long-form-section li { margin: 4px 0; }
+.long-form-section kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  background: #11151c;
+  border: 1px solid var(--border, #2a313e);
+  border-radius: 4px;
+  color: var(--fg, #e7eaef);
+}
+body.minimal-ui .long-form { display: none; }
+
+.footer-link {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: var(--fg-dim);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.twitch-consent {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 18px;
+  color: var(--fg-dim);
+  background: var(--bg-3);
+}
+.twitch-consent p {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fg);
+}
+.twitch-consent .action-btn {
+  background: #9146ff;
+  border-color: #9146ff;
+  color: #fff;
+  font-weight: 600;
+  padding: 10px 20px;
+  width: auto;
+  flex: 0 0 auto;
+}
+.twitch-consent .action-btn:hover { background: #772ce8; border-color: #772ce8; }
+
+
+/* ---------- end-of-run overlay ---------- */
+/* Shown once no better chest can be reached — playing on cannot change the
+   reward, so the helper says so instead of letting you grind pointlessly. */
+.run-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(12, 14, 18, 0.72);
+  backdrop-filter: blur(3px);
+  animation: runOverlayIn 160ms ease-out;
+}
+.run-overlay[hidden] { display: none; }
+@keyframes runOverlayIn { from { opacity: 0; } to { opacity: 1; } }
+.run-overlay-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 28px 30px 22px;
+  max-width: 460px;
+  text-align: center;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+}
+.run-overlay-chest { font-size: 40px; line-height: 1; margin-bottom: 10px; }
+.run-overlay-card h2 {
+  margin: 0 0 10px;
+  font-size: 19px;
+  letter-spacing: 0.3px;
+}
+.run-overlay-card p {
+  margin: 0 0 18px;
+  color: var(--fg-dim);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.run-overlay-card .action-btn { min-width: 200px; }
+#runOverlayDismiss {
+  display: block;
+  margin: 12px auto 0;
+  font-size: 11px;
+}
+
+/* Suggestion still being upgraded from the instant heuristic answer to the
+   full search: dimmed so it reads as provisional rather than final. */
+.suggestion-note.pending {
+  opacity: 0.6;
+  transition: opacity 120ms ease;
 }

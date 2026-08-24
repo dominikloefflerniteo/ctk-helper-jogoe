@@ -1,0 +1,49 @@
+[01:16:58] === overnight search starting ===
+[01:16:58] phase 1 starting: 1000 games/config, seed 1, deadline 2026-08-24T03:15
+[04:19:45] phase 1 done: 34 configs measured
+phase 1: 34 configurations, 1000 games each
+
+silver+   gold    avg    picks  disc   config
+------------------------------------------------------------------------------------------------
+ 67.5%    6.0%   307.4    4.38   9.40   {"policy":"combo","objective":"balanced","N":24,"exactLeaf":10,"exactMaxCards":10}
+ 67.6%    5.8%   307.6    4.36   9.51   {"policy":"combo","objective":"balanced","N":24,"exactLeaf":0,"exactMaxCards":12}
+ 65.9%    6.4%   307.5    4.41   9.29   {"policy":"combo","objective":"balanced","N":16,"exactLeaf":10,"exactMaxCards":13}
+ 67.3%    5.6%   306.0    4.34   9.54   {"policy":"combo","objective":"balanced","N":24,"exactLeaf":0,"exactMaxCards":10}
+ 65.2%    6.2%   306.5    4.41   9.31   {"policy":"combo","objective":"balanced","N":16,"exactLeaf":10,"exactMaxCards":12}
+ 64.9%    6.1%   306.2    4.41   9.31   {"policy":"combo","objective":"balanced","N":16,"exactLeaf":10,"exactMaxCards":10}
+ 65.1%    5.7%   306.4    4.38   9.41   {"policy":"combo","objective":"balanced","N":16,"exactLeaf":0,"exactMaxCards":13}
+ 64.8%    5.6%   305.5    4.38   9.43   {"policy":"combo","objective":"balanced","N":16,"exactLeaf":0,"exactMaxCards":12}
+ 64.7%    5.6%   305.7    4.38   9.40   {"policy":"combo","objective":"balanced","N":16,"exactLeaf":6,"exactMaxCards":12}
+ 64.5%    5.5%   304.7    4.38   9.43   {"policy":"combo","objective":"balanced","N":16,"exactLeaf":0,"exactMaxCards":10}
+ 64.5%    5.3%   304.6    4.38   9.42   {"policy":"combo","objective":"balanced","N":16,"exactLeaf":6,"exactMaxCards":10}
+ 60.9%    5.8%   301.7    4.42   9.33   {"policy":"combo","objective":"balanced","N":12,"exactLeaf":10,"exactMaxCards":13}
+ 61.0%    5.6%   301.1    4.42   9.32   {"policy":"combo","objective":"balanced","N":12,"exactLeaf":10,"exactMaxCards":12}
+ 60.6%    5.5%   300.7    4.42   9.31   {"policy":"combo","objective":"balanced","N":12,"exactLeaf":10,"exactMaxCards":10}
+ 60.3%    5.4%   301.1    4.42   9.32   {"policy":"combo","objective":"balanced","N":12,"exactLeaf":8,"exactMaxCards":12}
+ 59.8%    5.2%   300.9    4.37   9.43   {"policy":"combo","objective":"balanced","N":12,"exactLeaf":0,"exactMaxCards":13}
+ 59.9%    5.1%   300.2    4.38   9.41   {"policy":"combo","objective":"balanced","N":12,"exactLeaf":0,"exactMaxCards":12}
+ 60.1%    5.0%   300.1    4.42   9.28   {"policy":"combo","objective":"balanced","N":12,"exactLeaf":8,"exactMaxCards":10}
+ 59.5%    4.8%   300.6    4.39   9.38   {"policy":"combo","objective":"balanced","N":12,"exactLeaf":6,"exactMaxCards":13}
+ 59.4%    4.7%   298.9    4.36   9.43   {"policy":"combo","objective":"balanced","N":12,"exactLeaf":0,"exactMaxCards":10}
+
+wrote 11 configs to overnight-phase2-configs.json
+[04:19:45] phase 2 starting: 5000 games/config, seed 1, deadline 2026-08-24T05:45
+[10:49:25] phase 2 done: 5 configs measured
+phase 2: 5 configurations, 5000 games each
+
+silver+   gold    avg    picks  disc   config
+------------------------------------------------------------------------------------------------
+ 66.2%    6.2%   307.1    4.39   9.33   {"policy":"combo","objective":"balanced","N":24,"exactLeaf":0,"exactMaxCards":12}
+ 65.9%    6.1%   305.9    4.38   9.35   {"policy":"combo","objective":"balanced","N":24,"exactLeaf":0,"exactMaxCards":10}
+ 63.6%    6.0%   305.1    4.39   9.34   {"policy":"combo","objective":"balanced","N":16,"exactLeaf":0,"exactMaxCards":13}
+ 63.1%    5.8%   304.4    4.39   9.34   {"policy":"combo","objective":"balanced","N":16,"exactLeaf":0,"exactMaxCards":12}
+ 63.1%    5.8%   304.4    4.39   9.32   {"policy":"combo","objective":"balanced","N":16,"exactLeaf":6,"exactMaxCards":12}
+
+wrote 4 configs to overnight-phase3-configs.json
+[10:49:25] phase 3 starting: 20000 games/config, seed 1, deadline 2026-08-24T08:15
+[10:49:34] phase 3 done: 0 configs measured
+[10:49:34] phase 4 starting: 20000 games/config, seed 2, deadline 2026-08-24T09:30
+[10:49:34] phase 4 done: 0 configs measured
+[10:49:34] phase 4 starting: 20000 games/config, seed 3, deadline 2026-08-24T09:40
+[10:49:35] phase 4 done: 0 configs measured
+[10:49:35] === ALL PHASES COMPLETE ===
