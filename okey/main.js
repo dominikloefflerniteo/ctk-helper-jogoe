@@ -331,7 +331,11 @@ function checkRunFinished() {
   // in here. Only run it on the render that already carries the strong
   // suggestion — that render happens off the click, so nothing blocks a button
   // press waiting for it.
-  if (!suggestionCache.strong) return;
+  // ...and only when that strong answer belongs to the position on screen. While
+  // the player is still typing the dealt cards, refresh() skips the search
+  // altogether, so the flag would otherwise still carry the PREVIOUS position's
+  // "strong" and drag the exact solve back into the click path.
+  if (!suggestionCache.strong || suggestionCache.key !== positionKey()) return;
   // Nothing to announce before the run has actually started.
   if (state.log.length === 0) { hideRunOverlay(); return; }
 

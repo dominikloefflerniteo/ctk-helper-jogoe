@@ -203,6 +203,22 @@ export class EndgameSolver {
     return vec;
   }
 
+  // Value curve of a position whose field is not full yet.
+  //
+  // `value` reads the board mask as THE field, so a four-card board describes a
+  // game played in a permanently four-wide window: every refill after a pick or
+  // a discard tops it back up to four, never to five. That is not this game —
+  // the missing cards are dealt before the player can do anything — and the
+  // difference is not cosmetic: a hand that needs all five slots to be held
+  // together comes out unreachable. So deal the gap first and average over
+  // every equally likely fill.
+  valueAfterFill(available, board, missing) {
+    const deckBits = bitsOf(available & ~board);
+    const n = Math.min(missing, deckBits.length);
+    if (n <= 0) return this.value(available, board);
+    return this.chance(available, board, deckBits, n);
+  }
+
   // Average the value over every equally likely set of replacement cards.
   chance(available, kept, deckBits, drawCount) {
     const NT = this.NT;

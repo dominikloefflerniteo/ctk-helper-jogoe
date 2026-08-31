@@ -16,7 +16,7 @@
 // around the seventh action, so it covers every decision that actually settles
 // which chest you end up with.
 
-import { deckRemaining, CHEST_THRESHOLDS, scoreHand } from "./game.js";
+import { deckRemaining, CHEST_THRESHOLDS, scoreHand, BOARD_SIZE } from "./game.js";
 import { EndgameSolver, maskOf } from "./endgame.js";
 import { makeAvailableSet, bestAchievable } from "./potential.js";
 import { suggestMoveRollout } from "./rollout.js";
@@ -110,9 +110,15 @@ export function chestOutlook(state, options = {}) {
     return { canImprove: false, maxRemaining: 0, nextThreshold: null, exact: true };
   }
 
+  // Slots the player has not typed in yet are cards the game has already
+  // dealt — they are not a smaller field. Ask the solver for the position
+  // AFTER those slots are filled, or a hand that needs all five slots at once
+  // reads as unreachable and the run gets called finished while it isn't.
+  const missing = Math.min(BOARD_SIZE - boardCards.length, deck.length);
+
   let maxRemaining = null;
   let exact = false;
-  if (boardCards.length >= 3 && cardsInPlay <= (options.exactMaxCards ?? EXACT_MAX_CARDS)) {
+  if (boardCards.length + missing >= 3 && cardsInPlay <= (options.exactMaxCards ?? EXACT_MAX_CARDS)) {
     try {
       const available = maskOf([...deck, ...boardCards]);
       const board = maskOf(boardCards);
@@ -122,7 +128,7 @@ export function chestOutlook(state, options = {}) {
         solver.prepare(available);
         if (options.cache) options.cache.solver = solver;
       }
-      const curve = solver.value(available, board);
+      const curve = solver.valueAfterFill(available, board, missing);
       let top = 0;
       for (let i = curve.length - 1; i >= 0; i--) {
         if (curve[i] > 0) { top = i; break; }

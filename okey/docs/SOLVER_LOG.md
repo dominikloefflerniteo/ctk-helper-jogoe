@@ -346,3 +346,43 @@ it costs nothing), and when the position does change the instant heuristic
 answer renders first with the full search handed to a timeout. Per-click cost:
 ~180 ms -> 0.07 ms blocking; the strong answer replaces the provisional one a
 moment later.
+
+---
+
+## Fix — the field the player has not finished typing in (2026-08-31)
+
+Reported from a live run: the "no better chest is possible" overlay appeared on
+a position that had silver locked in. Field `6R 7R _ 8B 7B` at 100 points, deck
+`R1 R8 B1 B2 B6 Y4`; `chestOutlook` returned `maxRemaining: 120`, four short of
+the 200 that silver needs.
+
+The 200 is there: hold 7R+6R and 8B+7B, draw 8R and 6B, and 6R-7R-8R plus
+6B-7B-8B pays 100 + 100 on the nose. It needs all four kept at once, so it only
+exists in a five-wide field.
+
+`EndgameSolver.value(available, board)` reads the board mask as *the* field. A
+four-card mask therefore describes a game played in a permanently four-wide
+window — after every pick and every discard it refills to four, never to five —
+and in that game the line above is unreachable. The empty slot is not a narrower
+field, though: the game has already dealt that card, the player just has not
+typed it in yet. Every simulation fills the board before asking (`smoke-outlook`,
+`diagnose-outlook`), which is why 250 simulated runs showed zero false calls
+while the real UI produced one on a human timescale.
+
+New `EndgameSolver.valueAfterFill(available, board, missing)` deals the gap
+first and averages the curve over every equally likely fill; `chestOutlook` uses
+it whenever the field has holes the deck can still fill. Reading the top
+non-zero index off an average is exact for this question — the terms are
+non-negative, so the average is positive exactly when some fill is. Full fields
+take `missing = 0` and the old path unchanged; benchmark figures above are
+untouched.
+
+`bench/smoke-outlook-partial.mjs` covers it: the reported position, plus 120
+played-out games that re-ask the question at every full field with one card held
+back (6850 partial fields). An untyped card must never lower the ceiling.
+
+Second bug on the same screen: `checkRunFinished` gated only on
+`suggestionCache.strong`, and while the player types the dealt cards `refresh()`
+skips the search entirely — so the flag still carried the *previous* position's
+strong answer, and the exact solve ran back inside the click path. It now also
+requires the cached key to match the position on screen.
