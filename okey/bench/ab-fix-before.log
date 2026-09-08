@@ -1,0 +1,5 @@
+Okey A/B — 800 games/config, seed 1 (same decks for every config)
+chests: gold >= 400, silver >= 300
+
+config     silver+        gold      avg      ms/game
+----------------------------------------------------------

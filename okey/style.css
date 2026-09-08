@@ -546,6 +546,19 @@ kbd {
   line-height: 1.5;
 }
 
+/* The reason under the advice. Quieter than the advice itself on purpose: the
+   move is what the player acts on, the reason is what they check it against —
+   and it must never compete with the highlighted card on the field. */
+.suggestion-why {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--muted, #9aa1ac);
+}
+.suggestion-note.pending + .suggestion-why {
+  opacity: 0.6;
+}
+
 .suggestion-label {
   display: flex;
   justify-content: space-between;
