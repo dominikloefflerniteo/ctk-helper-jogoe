@@ -9,16 +9,8 @@
 //
 // The cutoff is a time budget, not a quality judgement. Exact solving costs
 // ~2.8x per extra card still in play (measured in bench/endgame-timing.mjs):
-// 12 cards is ~114 ms, 13 is ~388 ms, 14 is 1.4 s, 16 is 14.5 s.
-//
-// Thirteen, not twelve. The old cutoff was set when this search still ran
-// inside the click handler, where 388 ms is a visibly frozen page. It does not
-// any more (see main.js): the instant heuristic answer paints first and the
-// exact one replaces it a moment later, so the budget to spend is a moment of
-// staleness, not a stutter. Thirteen buys a whole extra turn of certainty for
-// that — and it is exactly the turn the rollout got wrong most visibly, because
-// a 13-card field is still five cards wide and every discard candidate looks
-// alike to a heuristic.
+// 12 cards is ~200 ms, 13 is ~630 ms, 16 is 22 s. Twelve keeps every
+// suggestion under a fifth of a second.
 //
 // In a normal game (about 4 picks and 11 discards) the exact phase begins
 // around the seventh action, so it covers every decision that actually settles
@@ -29,9 +21,8 @@ import { EndgameSolver, maskOf } from "./endgame.js";
 import { makeAvailableSet, bestAchievable } from "./potential.js";
 import { suggestMoveRollout } from "./rollout.js";
 import { suggestMove } from "./solver.js";
-import { candidateKey } from "./explain.js";
 
-export const EXACT_MAX_CARDS = 13;
+export const EXACT_MAX_CARDS = 12;
 
 // Per-game scratchpad. The exact solver's table stays valid for the rest of a
 // game — every later position is a sub-position of the first one solved — so
@@ -65,17 +56,6 @@ function exactSuggestion(state, deck, cache) {
   const slots = best.cards.map((id) => state.board.indexOf(id));
   if (slots.some((s) => s < 0)) return null;
 
-  // Same shape the rollout produces, so explain.js does not care which engine
-  // answered. `expected` is points still to come in both.
-  const candidates = (best.all ?? []).map((c) => ({
-    key: candidateKey(c.kind, c.cards),
-    kind: c.kind,
-    cards: c.cards,
-    pSilver: c.pSilver,
-    pGold: c.pGold,
-    expected: c.expected,
-  }));
-
   const pct = (x) => Math.round(x * 100) + "%";
   const odds = `Silver ${pct(best.pSilver)} · gold ${pct(best.pGold)} — exact, not an estimate.`;
   if (best.kind === "pick") {
@@ -89,7 +69,6 @@ function exactSuggestion(state, deck, cache) {
       type,
       label,
       exact: best,
-      candidates,
       reasoning: `Pick ${label} for ${best.gained} pts. ${odds}`,
     };
   }
@@ -99,7 +78,6 @@ function exactSuggestion(state, deck, cache) {
     cards: best.cards,
     expectedAfter: 0,
     exact: best,
-    candidates,
     reasoning: `Discard ${best.cards[0]}. ${odds}`,
   };
 }

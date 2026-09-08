@@ -8,7 +8,6 @@ import {
   chestForScore,
 } from "./game.js";
 import { suggest, createPolicyCache, chestOutlook } from "./policy.js";
-import { explainMove } from "./explain.js";
 import { applyToDOM, setLang, onLangChange, t } from "./i18n.js";
 import {
   renderBoard, renderPalette, updateSidebar, updateSessionStats,
@@ -23,7 +22,6 @@ const els = {
   pickTotal: document.getElementById("pickTotal"),
   pickLabel: document.getElementById("pickLabel"),
   suggestionNote: document.getElementById("suggestionNote"),
-  suggestionWhy: document.getElementById("suggestionWhy"),
   practiceToggle: document.getElementById("practiceToggle"),
   confirmBtn: document.getElementById("confirmBtn"),
   acceptSuggestionBtn: document.getElementById("acceptSuggestionBtn"),
@@ -254,11 +252,6 @@ function refresh() {
   els.suggestionNote.textContent = waiting
     ? t("awaitingCards", { n: missing })
     : (move ? adviceText(move) : t("suggestionPlaceholder"));
-  if (els.suggestionWhy) {
-    const why = waiting ? "" : whyText(move);
-    els.suggestionWhy.textContent = why;
-    els.suggestionWhy.hidden = !why;
-  }
   els.suggestionNote.classList.toggle("awaiting", waiting);
   els.suggestionNote.classList.toggle("pending", !waiting && !!move && !suggestionCache.strong);
   document.body.classList.toggle("awaiting-cards", waiting);
@@ -483,46 +476,6 @@ function adviceText(move) {
     return t("advicePick", { hand: handLabel(move), score: move.score }) + odds;
   }
   return t("adviceDiscard", { card: move.cards[0] }) + odds;
-}
-
-// The second line: why that card and not the other one.
-//
-// Odds alone never answered the question a doubting player has — "silver 96%"
-// says how it ends, not what is wrong with the card being thrown. These
-// sentences are built by explain.js from the same candidate list the engine
-// ranked, so the text cannot recommend one thing while the highlight shows
-// another.
-//
-// Kept to two sentences at most: the throw, and the card that stays and looks
-// like it should not.
-function whyText(move) {
-  if (!move || move.kind !== "discard") return "";
-  const why = explainMove(state, move);
-  if (!why) return "";
-
-  const parts = [];
-  parts.push(why.dead
-    ? t("whyDead", { card: why.thrown })
-    : t("whyWeak", { card: why.thrown, max: why.thrownBest }));
-
-  if (why.keep) {
-    const cards = why.keepCards.join("+");
-    parts.push(why.keepMissing.length === 0
-      ? t("whyKeepReady", { cards, score: why.keepScore })
-      : t("whyKeep", { cards, missing: why.keepMissing.join("+"), score: why.keepScore }));
-  }
-
-  // Only worth a third sentence when the runner-up actually costs something.
-  const alt = why.alternative;
-  if (alt && alt.kind === "points") {
-    parts.push(t("whyAltPoints", { card: alt.cards[0], points: alt.points }));
-  } else if (alt && alt.kind === "chest") {
-    parts.push(t("whyAltChest", {
-      card: alt.cards[0],
-      silver: Math.round(alt.pSilver * 100) + "%",
-    }));
-  }
-  return parts.join(" ");
 }
 
 // ---------- language ----------

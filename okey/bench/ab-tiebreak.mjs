@@ -13,11 +13,19 @@
 //
 // Usage:
 //   node bench/ab-tiebreak.mjs [games] [--seed=1] [--only=before,after]
+//   node bench/ab-tiebreak.mjs 800 --only=after --dump=bench/after.jsonl
+//
+// --dump writes one line per game (score + chest). Two configs dumped on the
+// same seed can then be compared PAIRED (bench/ab-paired.mjs), which is the
+// only comparison the marginal +-x% in this table does not support: both
+// configs played the same decks, so most of the spread is the deck, not the
+// policy.
 
 import {
   createState, confirmPick, discardSlot, autoFillBoardFromDeck,
   deckRemaining, filledCards, chestForScore, CHEST_THRESHOLDS,
 } from "../game.js";
+import fs from "node:fs";
 import { suggest, createPolicyCache } from "../policy.js";
 import { suggestMove } from "../solver.js";
 
@@ -76,6 +84,8 @@ const argv = process.argv.slice(2);
 const games = Number(argv.find((a) => /^\d+$/.test(a)) || 300);
 const seed = Number((argv.find((a) => a.startsWith("--seed=")) || "--seed=1").slice(7));
 const only = (argv.find((a) => a.startsWith("--only=")) || "").slice(7);
+const dump = (argv.find((a) => a.startsWith("--dump=")) || "").slice(7);
+const NL = String.fromCharCode(10);
 const names = only ? only.split(",") : Object.keys(CONFIGS);
 
 console.log(`Okey A/B — ${games} games/config, seed ${seed} (same decks for every config)`);
@@ -88,12 +98,15 @@ for (const name of names) {
   const opts = CONFIGS[name];
   const rand = makeRng(seed);
   let silver = 0, gold = 0, sum = 0;
+  const rows = [];
   const t0 = Date.now();
   for (let i = 0; i < games; i++) {
     const r = playOneGame(rand, opts);
     sum += r.score;
     if (r.chest === "gold") { gold++; silver++; } else if (r.chest === "silver") silver++;
+    if (dump) rows.push(JSON.stringify({ i, config: name, score: r.score, chest: r.chest }));
   }
+  if (dump) fs.writeFileSync(dump, rows.join(NL) + NL);
   const ms = (Date.now() - t0) / games;
   const s = silver / games;
   const err = 1.96 * Math.sqrt((s * (1 - s)) / games) * 100;

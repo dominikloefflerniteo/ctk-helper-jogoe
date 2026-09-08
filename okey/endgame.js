@@ -276,12 +276,7 @@ export class EndgameSolver {
     };
 
     let best = null;
-    // Every move it looked at, not just the winner: the UI explains its advice
-    // by naming the runner-up and what it would cost, and that comparison has
-    // to come from these numbers rather than from a second opinion.
-    const all = [];
     const consider = (stats) => {
-      all.push(stats);
       const rank = stats.pSilver + GOLD_WEIGHT * stats.pGold;
       // Points are the LAST word, never the first. Once the chest is settled
       // — silver locked and gold gone — every line has the same probabilities
@@ -324,7 +319,7 @@ export class EndgameSolver {
         });
       }
     }
-    return best ? { ...best, all } : null;
+    return best;
   }
 
   // Best move for a concrete need (points still required for the target chest).
