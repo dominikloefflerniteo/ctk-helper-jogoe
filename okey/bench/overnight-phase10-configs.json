@@ -1,0 +1,135 @@
+[
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 24,
+  "label": "baseline"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 32,
+  "label": "n32"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 48,
+  "label": "n48"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 64,
+  "label": "n64"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 96,
+  "label": "n96"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 24,
+  "allocate": "halving",
+  "label": "n24-halving"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 48,
+  "allocate": "halving",
+  "label": "n48-halving"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 64,
+  "allocate": "halving",
+  "label": "n64-halving"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 96,
+  "allocate": "halving",
+  "label": "n96-halving"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 24,
+  "base": {
+   "thresholdTail": 3
+  },
+  "label": "tail3"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 48,
+  "base": {
+   "thresholdTail": 3
+  },
+  "label": "n48-tail3"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 48,
+  "allocate": "halving",
+  "base": {
+   "thresholdTail": 3
+  },
+  "label": "n48-halving-tail3"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 64,
+  "allocate": "halving",
+  "base": {
+   "thresholdTail": 3
+  },
+  "label": "n64-halving-tail3"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 48,
+  "tieZ": 1,
+  "label": "n48-band"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 48,
+  "allocate": "halving",
+  "tieZ": 1,
+  "label": "n48-halving-band"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 48,
+  "objective": "balanced",
+  "label": "n48-balanced"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 48,
+  "allocate": "halving",
+  "objective": "balanced",
+  "label": "n48-halving-balanced"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 13,
+  "N": 48,
+  "allocate": "halving",
+  "label": "n48-halving-exact13"
+ }
+]

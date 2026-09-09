@@ -22,7 +22,7 @@ import { makeAvailableSet, bestAchievable } from "./potential.js";
 import { suggestMoveRollout } from "./rollout.js";
 import { suggestMove } from "./solver.js";
 
-export const EXACT_MAX_CARDS = 12;
+export const EXACT_MAX_CARDS = 13;
 
 // Per-game scratchpad. The exact solver's table stays valid for the rest of a
 // game — every later position is a sub-position of the first one solved — so

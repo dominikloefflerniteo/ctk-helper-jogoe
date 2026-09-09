@@ -275,10 +275,52 @@ function suggestMoveV2(state, options = {}) {
   // 60 but spends three cards that a same-colour run would pay 100 for, while
   // the triple 3s next to it scores 40 out of cards nothing else wants.
   const ranked = rankCombos(board);
+
+  // Threshold-aware tail (options.thresholdTail = how many closing rounds it
+  // applies to; 0 = off, which is the behaviour everything before 2026-09-08
+  // was measured with).
+  //
+  // v2 is otherwise completely blind to the score: it maximises net points and
+  // never looks at how far the player is from a chest. That is defensible for
+  // the opening, where points and chest chances point the same way, and wrong
+  // at the close, where they separate hard — at 280 with one pick left a
+  // guaranteed 20 is the whole game and a 90 that might not land is worth
+  // nothing, while at 220 it is exactly the other way round.
+  //
+  // It matters here more than it did when a threshold rule was tried as a
+  // standalone policy and rejected (iteration 2): v2 is also the PLAYOUT policy
+  // inside the rollout, so a tail that misjudges the close does not merely play
+  // those positions badly, it feeds every candidate's P(silver) a biased
+  // estimate — the failure that inverted a real position on 2026-09-08.
+  //
+  // Two rules, both consequences of the fact that the score only ever goes up,
+  // so crossing a threshold locks that chest for good:
+  //
+  //   reach it   a pick that gets to the target now secures the chest; take the
+  //              best of those and stop gambling.
+  //   keep it    a pick that leaves more than the remaining rounds can possibly
+  //              score is a chest thrown away — drop it, unless every candidate
+  //              does that.
+  const thresholdTail = options.thresholdTail ?? 0;
+  let usable = ranked;
+  if (thresholdTail > 0 && rounds <= thresholdTail && rounds >= 1) {
+    const need = chestTarget(state.score) - state.score;
+    const scoring = ranked.filter((c) => c.score > 0);
+    const reaching = scoring.filter((c) => c.score >= need);
+    if (reaching.length > 0) {
+      usable = reaching;
+    } else {
+      // 100 is the highest a single pick can pay, so this is the most optimistic
+      // bound there is — it only ever rules out the genuinely hopeless.
+      const keeping = scoring.filter((c) => need - c.score <= 100 * (rounds - 1));
+      if (keeping.length > 0) usable = keeping;
+    }
+  }
+
   let pick = null;
   let pickNet = -Infinity;
   let pickDamage = 0;
-  for (const cand of ranked) {
+  for (const cand of usable) {
     if (cand.score <= 0) continue;
     // Cost a pick against what its cards could do INSTEAD — the combo being
     // taken is excluded, otherwise every completed hand costs nothing.

@@ -19,7 +19,12 @@ for (let i = 1; i < blocks.length; i += 2) {
   );
 }
 
-const LEGAL = ["impressumTitle", "impressumBody", "datenschutzTitle", "datenschutzBody"];
+// Long prose that only en and de carry; every other language falls back to
+// English, same as the sibling helpers. Headings ARE translated everywhere —
+// only the bodies fall back, so a reader always sees their own language in the
+// structure and English only inside the long text.
+const LEGAL = ["impressumTitle", "impressumBody", "datenschutzTitle", "datenschutzBody",
+  "aboutSolverBody", "aboutFindingsBody", "aboutLimitsBody"];
 let bad = 0;
 
 const undefinedKeys = [...used].filter((k) => !defined.en.has(k));

@@ -1,0 +1,34 @@
+[
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 24,
+  "label": "baseline"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 96,
+  "allocate": "halving",
+  "label": "n96-halving"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 96,
+  "label": "n96"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 64,
+  "allocate": "halving",
+  "label": "n64-halving"
+ },
+ {
+  "policy": "combo",
+  "exactMaxCards": 12,
+  "N": 64,
+  "label": "n64"
+ }
+]

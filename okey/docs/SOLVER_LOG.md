@@ -205,6 +205,172 @@ the first exact turn costs ~200 ms and every later one is free. Measured on a
 real game: 152/95/83/82/81/78/57/58 ms of rollout, then 204 ms once, then 0 ms
 for the rest.
 
+## Iteration 11 — more playouts, spent better (SHIPPED, 2026-09-09)
+
+Iteration 10 established that the endgame is already perfect and that every
+lost run is decided in the rollout phase. This is the answer to that.
+
+An unattended overnight campaign (`bench/campaign.mjs`, 01:00-08:42) screened 18
+configurations on seed 1 and verified the best on seeds the tuning had never
+seen. Two changes came out of it, and one thing that did not.
+
+**N: 24 -> 96.** The 24 was never a quality finding — it was the latency budget
+of a search that used to run inside the click handler. The gain is monotone:
+
+| config | silver+ | gold |
+|---|---|---|
+| N=24 (was shipping) | 65.2% | 5.9% |
+| N=32 | 67.7% | 5.0% |
+| N=48 | 70.7% | 5.9% |
+| N=96 | 71.7% | 7.3% |
+| N=96 + halving | 72.4% | 7.7% |
+
+**Sequential halving of the playout budget.** Same total playouts, spent in
+rounds: measure every candidate, drop the worse half, move the budget to the
+rest. On a real position the two moves that actually compete went from 24
+playouts each to 56, while four hopeless discards dropped to 8 — same cost,
+and marginally faster, because settled candidates stop being paid for.
+
+It needs the budget to be worth having: **at N=24 halving measured worse than
+flat** (62.1% against 65.2%). Split a small budget into rounds and each round is
+too noisy to drop the right half. The two changes only work together.
+
+### Confirmation
+
+3000 games, seeds 2 and 3, paired (McNemar on the chest indicators):
+
+| | shipping | N=96 + halving + exact 13 |
+|---|---|---|
+| silver-or-better | 64.1% | **70.7%** (+200 games of 3000, p < 0.0001) |
+| gold | 6.0% | **7.8%** (+53 games, p < 0.0001) |
+| average score | 305.5 | 311.5 (+5.9, 95% +4.4 .. +7.5) |
+
+Both chests up, which is the condition the iteration-10 rollback set. Published
+figures now come from this run.
+
+### The search moved off the main thread
+
+N=96 costs ~146 ms per decision against ~41 ms (p90 299 ms, worst 415 ms). A
+`setTimeout` would have put all of that in front of the next click, so the
+search now runs in a worker (`search-worker.js`). Measured in the browser with
+the field filled and 40 clicks fired during the search: instant answer after
+4 ms, worst click 1 ms, **no main-thread task over 50 ms**.
+
+`chestOutlook()` moved with it — it was the second expensive call on the main
+thread and would have undone half the benefit.
+
+### A test that asserted the wrong answer
+
+The regression suite recorded "throw B3" for the run's opening position, taken
+from what the engine said at the time plus a plausible-sounding justification
+(B3 is dead, R7 is one card from a 90). The stronger search disagreed, so the
+position was settled by an oracle rollout — 4000 playouts per candidate:
+
+| move | silver | gold |
+|---|---|---|
+| pick R4+R5+R3 (the made 70) | 41.3% | 2.9% |
+| discard B3 | 37.4% | 0.0% |
+
+Banking the 70 is the only line that keeps gold alive at all. **The test was
+wrong, and it was wrong because its expectation came from the engine it was
+testing.** An explanation that sounds right is not evidence.
+
+---
+
+## Iteration 10 — a shipped regression, and what it taught (2026-09-08)
+
+A user position from a live stream: field `R3 B4 B1 R6 B3`, 8 cards in the deck,
+score ~126. The helper said throw B3. B3 is the one card with partners left
+(B2 and B5 both in the deck, B4 face-up); R3 is dead (R4, R5, Y3 all gone).
+Exact evaluation of every discard, silver needing 180:
+
+| discard | P(silver) | E[points still to come] |
+|---|---|---|
+| **R3** | 100% | **206.2** |
+| B1 | 100% | 202.9 |
+| B3 | 100% | 183.3 |
+
+All three secure silver; B3 gives away 23 points. Two independent causes:
+
+1. **13 cards in play missed the exact window by one card**, so the position
+   fell to the rollout.
+2. The rollout ranks lexicographically on P(silver) with no tolerance, and its
+   v2 tail converted the R3 line in only 73.5% of playouts against 87.0% for B3
+   — a difference that is entirely playout noise, since both are truly 1.0.
+
+### What was tried, and what the numbers said
+
+800 paired games, seed 1, McNemar on the chest indicators:
+
+| config | silver+ | gold | avg |
+|---|---|---|---|
+| shipping | 65.8% | 6.5% | 306.3 |
+| exact window 13 | 65.9% | 6.8% | 307.3 |
+| noise band on all keys | 68.9% | 5.4% | 311.4 |
+| noise band on the silver key only | 66.4% | 5.4% | 308.0 |
+
+- **The band is a trade, not a free win.** Silver +3.3pp (27 games of 800,
+  p = 0.027) and +6.0 average points, against gold -1.1pp (9 games, p = 0.12).
+  It shipped on those 800 games and was rolled back the same evening: a change
+  that may cost gold cannot be justified by a difference that is not
+  distinguishable from noise.
+- **The obvious explanation for the gold loss is wrong.** Banding the gold key
+  looked like the culprit; banding only the silver key still loses exactly the
+  same gold (5.4%) and keeps almost none of the silver gain (+5 games, p = 0.74).
+  Whatever costs gold is not where it looked, and ~50 gold games per 800 cannot
+  resolve it — that needs 5000+.
+- **The exact window is not a rate lever.** 12 -> 13 moves silver by 0.1pp. It
+  makes the last turns provably right, which is worth having, but it does not
+  win chests.
+
+### Where the runs are actually decided (bench/where-lost.mjs)
+
+The measurement that reframes everything. At the moment a position first becomes
+exactly solvable, ask the solver what it is worth; 250 games:
+
+| state on entering the exact phase | games | ended silver+ |
+|---|---|---|
+| already lost (P < 5%) | 54 (21.6%) | **0.0%** |
+| still live (5-95%) | 54 (21.6%) | 35.2% (solver said 38.0%) |
+| already won (P > 95%) | 142 (56.8%) | **100.0%** |
+
+**The endgame is already perfect.** Every won position is converted, and the
+live ones convert at the rate the solver itself computes. There is nothing left
+to win there — and since `ceiling.mjs` says silver is reachable in every deck,
+all of the remaining loss is created before 13 cards remain.
+
+Everything worth doing is therefore in the rollout phase. Ideas parked in the
+code behind default-off switches, none of them measured yet: reallocating the
+playout budget (`allocate: "halving"`), more playouts now that the search no
+longer blocks the click (`N`), and a playout tail that knows what a chest needs
+(`thresholdTail` — v2 maximises points and never reads the score, so every
+playout misjudges the close in the same direction).
+
+One smell found while reading: `AUTO_GOLD_MIN = 0.10` is tested against a rate
+estimated from 24 playouts, whose possible values step 0, 4.2%, 8.3%, 12.5%.
+"10%" really means "at least 3 of 24 playouts reached gold", and one playout
+either way flips the whole search objective.
+
+---
+
+## Rule model — settled (2026-09-08)
+
+The benchmark carried an open doubt since iteration 0: the event UI says "8
+rounds per set, 100 points max per round" and puts gold at 400 of a possible
+800, which cannot be true if a discard permanently burns a card (8 x 3 = 24 is
+the whole deck). If discards were free of rounds, or discarded cards returned to
+the deck, every number in this log would have been tuned against the wrong game.
+
+**Dominik, who plays the event: there are no rounds and no round limit, you can
+discard at any time, and a discarded card is out of the deck for good.** That is
+what `game.js` has always modelled, so the log stands as measured. The "rounds"
+model in `bench/benchmark.mjs` is dead — kept only so the comparison can be
+reproduced.
+
+Worth keeping in mind: the in-game text described a best case (8 x 100 = 800) and
+was read as a structure. It stayed an open assumption for months and cost one
+question to settle.
+
 ## Ceiling — how much is actually there
 
 `bench/ceiling.mjs` computes, per game, the best score a player could have

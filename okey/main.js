@@ -189,6 +189,8 @@ function onReset() {
   lastSuggestion = null;
   suggestionCache = { key: null, move: null, strong: false };
   pendingKey = null;
+  // New game, new deck: the worker's table belongs to the old one too.
+  if (searchWorker) searchWorker.postMessage({ type: "reset" });
   overlayDismissed = false;
   hideRunOverlay();
   refresh();
@@ -290,6 +292,46 @@ function positionKey() {
   return state.board.join(",") + "|" + state.score + "|" + state.consumed.size;
 }
 
+// The strong search runs in a worker (search-worker.js) so that making it
+// stronger never costs responsiveness. A setTimeout only defers work onto the
+// same thread: at ~40 ms nobody notices, at ~400 ms a click during the search
+// does not land.
+//
+// Falls back to the old same-thread deferral wherever a module worker cannot be
+// created — an old browser, or the page opened from file://. The helper still
+// works there, it just blocks for the length of a search.
+let searchWorker = null;
+let workerBroken = false;
+
+function getWorker() {
+  if (searchWorker || workerBroken) return searchWorker;
+  try {
+    searchWorker = new Worker(new URL("./search-worker.js", import.meta.url), { type: "module" });
+    searchWorker.onmessage = (e) => {
+      const msg = e.data;
+      if (msg.key !== pendingKey) return;   // the player has moved on
+      pendingKey = null;
+      if (msg.type === "error") {
+        console.warn("[okey] search failed, keeping the quick answer:", msg.message);
+        return;
+      }
+      if (positionKey() !== msg.key) return;
+      suggestionCache = { key: msg.key, move: msg.move, strong: true, outlook: msg.outlook };
+      refresh();
+    };
+    searchWorker.onerror = () => {
+      // Losing the worker mid-game must not lose the helper: drop to the
+      // same-thread path for the rest of the session.
+      workerBroken = true;
+      searchWorker = null;
+      pendingKey = null;
+    };
+  } catch {
+    workerBroken = true;
+  }
+  return searchWorker;
+}
+
 function computeSuggestion() {
   const key = positionKey();
   if (suggestionCache.key === key) return suggestionCache.move;
@@ -298,17 +340,28 @@ function computeSuggestion() {
   const quick = suggest(state, { cache: policyCache, mode: "heuristic" });
   suggestionCache = { key, move: quick, strong: false };
 
-  // Strong answer after the browser has painted this click.
   if (pendingKey !== key) {
     pendingKey = key;
-    setTimeout(() => {
-      if (pendingKey !== key) return;      // position moved on meanwhile
-      const strong = suggest(state, { cache: policyCache });
-      pendingKey = null;
-      if (positionKey() !== key) return;   // ditto, after the search
-      suggestionCache = { key, move: strong, strong: true };
-      refresh();
-    }, 0);
+    const worker = getWorker();
+    if (worker) {
+      worker.postMessage({
+        type: "search",
+        key,
+        board: [...state.board],
+        score: state.score,
+        consumed: [...state.consumed],
+      });
+    } else {
+      // No worker: the old behaviour, deferred past this paint.
+      setTimeout(() => {
+        if (pendingKey !== key) return;      // position moved on meanwhile
+        const strong = suggest(state, { cache: policyCache });
+        pendingKey = null;
+        if (positionKey() !== key) return;   // ditto, after the search
+        suggestionCache = { key, move: strong, strong: true };
+        refresh();
+      }, 0);
+    }
   }
   return quick;
 }
@@ -339,7 +392,10 @@ function checkRunFinished() {
   // Nothing to announce before the run has actually started.
   if (state.log.length === 0) { hideRunOverlay(); return; }
 
-  const outlook = chestOutlook(state, { cache: policyCache });
+  // Prefer the outlook the worker already computed for this exact position —
+  // recomputing it here would put the one remaining expensive call back on the
+  // main thread, which is the whole point of the worker.
+  const outlook = suggestionCache.outlook ?? chestOutlook(state, { cache: policyCache });
   if (outlook.canImprove) { hideRunOverlay(); return; }
 
   const tier = chestForScore(state.score);

@@ -1,0 +1,129 @@
+==== okey overnight campaign started 09/09/2026  1:00:00,29 ==== 
+[01:00:00] campaign start — 9 shards on 12 cores
+[01:00:00] screen: 18 configs x 1500 games, seed 1, until 03:00:00
+[shard 0/9] phase 10: 2 configs, 1500 games each, deadline 09/09/2026, 03:00:00
+[shard 1/9] phase 10: 2 configs, 1500 games each, deadline 09/09/2026, 03:00:00
+[shard 3/9] phase 10: 2 configs, 1500 games each, deadline 09/09/2026, 03:00:00
+[shard 2/9] phase 10: 2 configs, 1500 games each, deadline 09/09/2026, 03:00:00
+[shard 4/9] phase 10: 2 configs, 1500 games each, deadline 09/09/2026, 03:00:00
+[shard 5/9] phase 10: 2 configs, 1500 games each, deadline 09/09/2026, 03:00:00
+[shard 6/9] phase 10: 2 configs, 1500 games each, deadline 09/09/2026, 03:00:00
+[shard 8/9] phase 10: 2 configs, 1500 games each, deadline 09/09/2026, 03:00:00
+[shard 7/9] phase 10: 2 configs, 1500 games each, deadline 09/09/2026, 03:00:00
+[shard 5] {"policy":"combo","exactMaxCards":12,"N":24,"allocate":"halving","label":"n24-halving"} -> silver+ 62.1% gold 5.6% avg 296.9 (2577s)
+[shard 0] {"policy":"combo","exactMaxCards":12,"N":24,"label":"baseline"} -> silver+ 65.2% gold 5.9% avg 305.8 (2748s)
+[shard 1] {"policy":"combo","exactMaxCards":12,"N":32,"label":"n32"} -> silver+ 67.7% gold 5.0% avg 308.1 (3282s)
+[shard 6] {"policy":"combo","exactMaxCards":12,"N":48,"allocate":"halving","label":"n48-halving"} -> silver+ 68.2% gold 6.3% avg 305.7 (4400s)
+[shard 6] stopping early: 47 min left, a config takes ~73 min
+[shard 6] finished 1/2 configs
+[shard 2] {"policy":"combo","exactMaxCards":12,"N":48,"label":"n48"} -> silver+ 70.7% gold 5.9% avg 310.9 (4489s)
+[shard 2] stopping early: 45 min left, a config takes ~75 min
+[shard 2] finished 1/2 configs
+[shard 7] {"policy":"combo","exactMaxCards":12,"N":64,"allocate":"halving","label":"n64-halving"} -> silver+ 70.7% gold 7.1% avg 309.4 (5308s)
+[shard 7] stopping early: 32 min left, a config takes ~88 min
+[shard 7] finished 1/2 configs
+[shard 0] {"policy":"combo","exactMaxCards":12,"N":24,"base":{"thresholdTail":3},"label":"tail3"} -> silver+ 65.2% gold 5.9% avg 305.8 (2564s)
+[shard 0] finished 2/2 configs
+[shard 3] {"policy":"combo","exactMaxCards":12,"N":64,"label":"n64"} -> silver+ 69.8% gold 6.5% avg 311.2 (5423s)
+[shard 3] stopping early: 30 min left, a config takes ~90 min
+[shard 3] finished 1/2 configs
+[shard 5] {"policy":"combo","exactMaxCards":12,"N":48,"allocate":"halving","tieZ":1,"label":"n48-halving-band"} -> silver+ 68.2% gold 6.3% avg 305.7 (3492s)
+[shard 5] finished 2/2 configs
+[shard 1] {"policy":"combo","exactMaxCards":12,"N":48,"base":{"thresholdTail":3},"label":"n48-tail3"} -> silver+ 70.7% gold 5.9% avg 310.9 (3124s)
+[shard 1] finished 2/2 configs
+[shard 8] {"policy":"combo","exactMaxCards":12,"N":96,"allocate":"halving","label":"n96-halving"} -> silver+ 72.4% gold 7.7% avg 311.1 (6476s)
+[shard 8] stopping early: 12 min left, a config takes ~108 min
+[shard 8] finished 1/2 configs
+[shard 4] {"policy":"combo","exactMaxCards":12,"N":96,"label":"n96"} -> silver+ 71.7% gold 7.3% avg 313.0 (6557s)
+[shard 4] stopping early: 11 min left, a config takes ~109 min
+[shard 4] finished 1/2 configs
+[02:49:17] screen done: 12 configs completed
+[02:49:17]   n96-halving            silver+ 72.4%  gold 7.7%  avg 311.1  value 0.877
+[02:49:17]   n96                    silver+ 71.7%  gold 7.3%  avg 313.0  value 0.863
+[02:49:17]   n64-halving            silver+ 70.7%  gold 7.1%  avg 309.4  value 0.849
+[02:49:17]   n64                    silver+ 69.8%  gold 6.5%  avg 311.2  value 0.827
+[02:49:17]   n48                    silver+ 70.7%  gold 5.9%  avg 310.9  value 0.825
+[02:49:17]   n48-tail3              silver+ 70.7%  gold 5.9%  avg 310.9  value 0.825
+[02:49:17]   n48-halving            silver+ 68.2%  gold 6.3%  avg 305.7  value 0.807
+[02:49:17]   n48-halving-band       silver+ 68.2%  gold 6.3%  avg 305.7  value 0.807
+[02:49:17]   n32                    silver+ 67.7%  gold 5.0%  avg 308.1  value 0.777
+[02:49:17]   baseline               silver+ 65.2%  gold 5.9%  avg 305.8  value 0.769
+[02:49:17]   tail3                  silver+ 65.2%  gold 5.9%  avg 305.8  value 0.769
+[02:49:17]   n24-halving            silver+ 62.1%  gold 5.6%  avg 296.9  value 0.733
+[02:49:17] verify: baseline, n96-halving, n96, n64-halving, n64 on seeds 2,3,4,5 x 3500 games, until 08:40:00
+[02:49:17] verify seed 2
+[shard 8/9] phase 11: 0 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 1/9] phase 11: 1 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 8] finished 0/0 configs
+[shard 6/9] phase 11: 0 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 3/9] phase 11: 1 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 6] finished 0/0 configs
+[shard 5/9] phase 11: 0 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 2/9] phase 11: 1 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 5] finished 0/0 configs
+[shard 4/9] phase 11: 1 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 0/9] phase 11: 1 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 7/9] phase 11: 0 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 7] finished 0/0 configs
+[shard 0] {"policy":"combo","exactMaxCards":12,"N":24,"label":"baseline"} -> silver+ 65.0% gold 6.2% avg 305.9 (3629s)
+[shard 0] finished 1/1 configs
+[shard 3] {"policy":"combo","exactMaxCards":12,"N":64,"allocate":"halving","label":"n64-halving"} -> silver+ 70.2% gold 6.9% avg 307.2 (7132s)
+[shard 3] finished 1/1 configs
+[shard 4] {"policy":"combo","exactMaxCards":12,"N":64,"label":"n64"} -> silver+ 69.9% gold 6.9% avg 311.9 (7238s)
+[shard 4] finished 1/1 configs
+[shard 1] {"policy":"combo","exactMaxCards":12,"N":96,"allocate":"halving","label":"n96-halving"} -> silver+ 71.3% gold 7.4% avg 309.5 (9305s)
+[shard 1] finished 1/1 configs
+[shard 2] {"policy":"combo","exactMaxCards":12,"N":96,"label":"n96"} -> silver+ 70.8% gold 7.6% avg 313.0 (9429s)
+[shard 2] finished 1/1 configs
+[05:26:26] verify seed 3
+[shard 0/9] phase 11: 1 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 1/9] phase 11: 1 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 2/9] phase 11: 1 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 3/9] phase 11: 1 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 5/9] phase 11: 0 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 5] finished 0/0 configs
+[shard 6/9] phase 11: 0 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 6] finished 0/0 configs
+[shard 4/9] phase 11: 1 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 7/9] phase 11: 0 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 7] finished 0/0 configs
+[shard 8/9] phase 11: 0 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 8] finished 0/0 configs
+[shard 0] {"policy":"combo","exactMaxCards":12,"N":24,"label":"baseline"} -> silver+ 64.3% gold 5.9% avg 305.2 (3662s)
+[shard 0] finished 1/1 configs
+[shard 3] {"policy":"combo","exactMaxCards":12,"N":64,"allocate":"halving","label":"n64-halving"} -> silver+ 68.5% gold 6.7% avg 306.2 (7184s)
+[shard 3] finished 1/1 configs
+[shard 4] {"policy":"combo","exactMaxCards":12,"N":64,"label":"n64"} -> silver+ 68.3% gold 6.7% avg 310.0 (7318s)
+[shard 4] finished 1/1 configs
+[shard 1] {"policy":"combo","exactMaxCards":12,"N":96,"allocate":"halving","label":"n96-halving"} -> silver+ 70.0% gold 7.2% avg 307.9 (9264s)
+[shard 1] finished 1/1 configs
+[shard 2] {"policy":"combo","exactMaxCards":12,"N":96,"label":"n96"} -> silver+ 69.2% gold 7.1% avg 311.2 (9478s)
+[shard 2] finished 1/1 configs
+[08:04:25] verify seed 4
+[shard 1/9] phase 11: 1 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 5/9] phase 11: 0 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 5] finished 0/0 configs
+[shard 7/9] phase 11: 0 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 3/9] phase 11: 1 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 7] finished 0/0 configs
+[shard 6/9] phase 11: 0 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 2/9] phase 11: 1 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 0/9] phase 11: 1 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 6] finished 0/0 configs
+[shard 4/9] phase 11: 1 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 8/9] phase 11: 0 configs, 3500 games each, deadline 09/09/2026, 08:40:00
+[shard 8] finished 0/0 configs
+[shard 0] {"policy":"combo","exactMaxCards":12,"N":24,"label":"baseline"} -> silver+ 63.5% gold 6.0% avg 305.4 (2180s)
+[shard 0] finished 1/1 configs
+[shard 4] {"policy":"combo","exactMaxCards":12,"N":64,"label":"n64"} -> silver+ 69.4% gold 7.6% avg 310.5 (2197s)
+[shard 4] finished 1/1 configs
+[shard 1] {"policy":"combo","exactMaxCards":12,"N":96,"allocate":"halving","label":"n96-halving"} -> silver+ 69.9% gold 7.7% avg 308.5 (2233s)
+[shard 1] finished 1/1 configs
+[shard 3] {"policy":"combo","exactMaxCards":12,"N":64,"allocate":"halving","label":"n64-halving"} -> silver+ 69.8% gold 6.4% avg 306.3 (2243s)
+[shard 3] finished 1/1 configs
+[shard 2] {"policy":"combo","exactMaxCards":12,"N":96,"label":"n96"} -> silver+ 67.9% gold 7.4% avg 310.1 (2257s)
+[shard 2] finished 1/1 configs
+[08:42:02] out of time before seed 5
+[08:42:02] report written to okey/bench/overnight-report.md
+[08:42:02] campaign done
+==== finished 09/09/2026  8:42:02,87 (exit 0) ==== 

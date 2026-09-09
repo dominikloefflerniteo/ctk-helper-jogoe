@@ -78,17 +78,23 @@ function playOneGame(rand, policy) {
 }
 
 
-// ---------- alternative rule model: "rounds" ----------
+// ---------- alternative rule model: "rounds" (RULED OUT, kept for the record) ----------
 //
-// Why this exists: under the model above (every discard permanently burns a
-// card) a set can never be 8 full rounds AND use discards — 8 x 3 = 24 is the
-// whole deck. Yet the UI states "8 rounds per set, 100 pts max per round" and
-// puts gold at 400 of a possible 800, which only makes sense if discarding
-// does NOT cost rounds. The likely real rule: a discarded card goes back into
-// the deck (or the deck is refilled), and discards are capped by a per-set
-// budget instead. Until we can watch the live event, this model brackets the
-// other end: fixed 8 rounds, discarded cards return to the deck, `budget`
-// discards for the whole set.
+// SETTLED 2026-09-08 by Dominik, who plays the event: there are no rounds and
+// no round limit, you may discard whenever you like, and a discarded card is
+// gone from the deck for good. That is exactly the model game.js implements, so
+// every number in docs/SOLVER_LOG.md was measured against the real rules and
+// this alternative is dead.
+//
+// It existed because the event UI talks about "8 rounds per set, 100 pts max
+// per round" and puts gold at 400 of a possible 800 — which cannot be squared
+// with discards burning cards (8 x 3 = 24 is the whole deck). Apparently those
+// numbers describe a best case, not a structure. Worth remembering as a warning:
+// the in-game text implied a rule model that does not exist, and it sat in this
+// file as an open doubt for months while being cheap to settle by asking.
+//
+// The code stays reachable via --model=rounds so the comparison can be
+// reproduced, but nothing should be tuned against it.
 function playOneGameRounds(rand, policy) {
   const state = createState();
   const rounds = policy.rounds ?? 8;

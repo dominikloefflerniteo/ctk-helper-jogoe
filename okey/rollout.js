@@ -21,16 +21,28 @@ import { suggestMove, rankCombos } from "./solver.js";
 import { makeAvailableSet, bestAchievable } from "./potential.js";
 import { EndgameSolver, maskOf } from "./endgame.js";
 
-// N and the leaf cutoff compete for the same time budget, and the overnight
-// search (bench/overnight.mjs, 5000 games per config) settled the trade:
-// spending the time on more rollouts beats spending it on exact leaf
-// evaluation. N=24 with the leaf off reaches 66.2% silver-or-better against
-// 63.1% for N=16 with leaf=8, at ~180 ms per search.
+// Playouts per candidate.
 //
-// That search no longer sits in the click path either (see main.js): the
-// instant heuristic answer is rendered first and this one replaces it right
-// after, so the cost is off the critical path.
-const DEFAULT_N = 24;
+// Was 24, and that number was a latency budget rather than a quality finding:
+// the search used to run inside the click handler, so it could not cost more.
+// It no longer runs there at all — it runs in a worker thread (search-worker.js)
+// — and the 2026-09-09 overnight campaign measured what the extra playouts are
+// worth on fresh seeds, against the same decks:
+//
+//   N=24 (was shipping)   64.4% silver-or-better, 6.0% gold
+//   N=64 + halving        69.4%                   6.8%
+//   N=96 + halving        70.6%                   7.3%
+//
+// Both chests improve together, which is what makes this different from the
+// noise-band attempt of the day before: that one bought silver by giving up
+// gold and was rolled back for it. The gain is monotone in N up to here, and
+// N=96 is where the curve is flat enough that another doubling is not worth
+// the memory churn.
+//
+// Cost, measured single-process: ~146 ms per decision (p90 299 ms, worst 415 ms)
+// against ~41 ms before — all of it in the worker, none of it in front of a
+// click. The instant heuristic answer is still what paints first.
+const DEFAULT_N = 96;
 
 // Where a rollout stops guessing and starts knowing. Below this many cards in
 // play the exact solver evaluates the position outright, so a playout no
@@ -59,12 +71,61 @@ const MAX_PICK_CANDIDATES = 3;
 //   "auto"     what the helper actually ships with: hunt gold while gold is
 //              still on, fall back to locking in silver once it is not. No
 //              setting for the player to get wrong.
+//
+// Each objective is the list of keys to rank by, in order, most important
+// first. "balanced" ranks on a derived key (pSilver + 2 * pGold) computed per
+// playout, so it goes through the same machinery as the rest.
 const OBJECTIVES = {
-  silver: (s) => [s.pSilver, s.pGold, s.mean],
-  balanced: (s) => [s.pSilver + 2 * s.pGold, s.mean],
-  gold: (s) => [s.pGold, s.pSilver, s.mean],
-  points: (s) => [s.mean],
+  silver: ["pSilver", "pGold", "mean"],
+  balanced: ["balanced", "mean"],
+  gold: ["pGold", "pSilver", "mean"],
+  points: ["mean"],
 };
+
+// Noise band on the ranking keys, in standard errors of the PAIRED difference
+// between two candidates (the playouts share deck orders, so the pairing is
+// valid). A candidate that is not separated from the leader by more than the
+// band stays in the running and is decided by the next key.
+//
+// OFF BY DEFAULT, and that is deliberate: with the band on every key, a
+// 2026-09-08 A/B over 800 paired games moved silver-or-better from 65.8% to
+// 68.9% but gold from 6.5% down to 5.4%. Losing gold is the wrong trade to make
+// silently — gold is what the player is actually playing for once it is in
+// reach — so the band ships off until a setting is measured that keeps both.
+//
+// Per-key values are allowed: { pSilver: 1, pGold: 0 } bands the safety key but
+// never the gold key, which is the variant under test. A plain number applies
+// to every key.
+const DEFAULT_TIE_Z = 0;
+
+function tieZFor(tieZ, key) {
+  if (tieZ == null) return 0;
+  if (typeof tieZ === "number") return tieZ;
+  return tieZ[key] ?? 0;
+}
+
+// How the playout budget is spread over the candidate moves.
+//
+//   "flat"    every candidate gets N playouts. Simple, and what has always
+//             shipped — but on a five-card field with a full deck there are
+//             usually 6-8 candidates, and most of them are not close: throwing
+//             the one card that carries the whole run scores 0% in every
+//             playout, and it costs exactly as much to establish that as it
+//             costs to separate the two moves that are actually competing.
+//   "halving" sequential halving. Same total playouts, spent in rounds: every
+//             survivor is measured, the worse half is dropped, the budget moves
+//             to the rest. The two real candidates end up with several times
+//             the playouts they get now, at identical cost.
+//
+// "halving" ships: same total playouts, spent in rounds so the candidates that
+// are actually competing get several times the resolution. Worth +0.7pp silver
+// over flat at N=96 and slightly FASTER (146 ms vs 152 ms), because candidates
+// that are settled stop being paid for.
+//
+// It needs the budget to be worth having: at N=24 halving measured WORSE than
+// flat (62.1% against 65.2%) — splitting a small budget into rounds leaves too
+// few playouts per round to drop the right half. Do not enable it without N.
+const DEFAULT_ALLOCATE = "halving";
 
 // "Gold is still on" has two readings, and they play very differently:
 //
@@ -205,39 +266,150 @@ export function suggestMoveRollout(state, options = {}) {
     ctx = { solver, exactLeaf };
   }
 
-  const all = [];
-  for (const move of moves) {
-    let silver = 0, gold = 0, sum = 0;
-    for (const seed of seeds) {
+  // Total playouts to spend on this decision. Both allocation strategies get
+  // the same budget, so "halving" is free: it only moves playouts from
+  // candidates that are already settled onto the ones still competing.
+  const budget = N * moves.length;
+  const allocate = options.allocate ?? DEFAULT_ALLOCATE;
+
+  // Per-playout results are kept, not only their averages: the band compares
+  // candidates playout by playout, which is only meaningful because they share
+  // deck orders. Capacity is the whole budget because under halving a single
+  // survivor can end up with far more than N.
+  const all = moves.map((move) => ({
+    move,
+    n: 0,
+    sums: { pSilver: 0, pGold: 0, mean: 0 },
+    samples: {
+      pSilver: new Float64Array(budget),
+      pGold: new Float64Array(budget),
+      mean: new Float64Array(budget),
+      balanced: new Float64Array(budget),
+    },
+    stats: null,
+  }));
+
+  // Playout i of every candidate uses seed i — that is what makes the
+  // comparison paired, and it holds under halving too: two candidates with
+  // different counts still share the whole shorter prefix.
+  const seedAt = (i) => (options.seed ?? 0x9E3779B9) + i * 0x85EBCA6B;
+
+  const extend = (entry, upTo) => {
+    for (let i = entry.n; i < upTo; i++) {
       const s = cloneState(state);
-      applyMove(s, move);
-      const r = playout(s, makeRng(seed), baseOptions, ctx);
-      silver += r.pSilver;
-      gold += r.pGold;
-      sum += r.mean;
+      applyMove(s, entry.move);
+      const r = playout(s, makeRng(seedAt(i)), baseOptions, ctx);
+      entry.samples.pSilver[i] = r.pSilver;
+      entry.samples.pGold[i] = r.pGold;
+      entry.samples.mean[i] = r.mean;
+      entry.samples.balanced[i] = r.pSilver + 2 * r.pGold;
+      entry.sums.pSilver += r.pSilver;
+      entry.sums.pGold += r.pGold;
+      entry.sums.mean += r.mean;
     }
-    const stats = { pSilver: silver / N, pGold: gold / N, mean: sum / N };
-    all.push({ move, stats });
+    entry.n = Math.max(entry.n, upTo);
+    entry.stats = {
+      pSilver: entry.sums.pSilver / entry.n,
+      pGold: entry.sums.pGold / entry.n,
+      mean: entry.sums.mean / entry.n,
+      balanced: (entry.sums.pSilver + 2 * entry.sums.pGold) / entry.n,
+    };
+  };
+
+  // The objective needs stats to decide (autoWantsGold reads every candidate's
+  // gold rate), so under halving it is fixed after the first round and kept —
+  // switching objectives mid-search would compare arms measured under different
+  // targets.
+  let keys = null;
+  const chooseKeys = () => {
+    if (keys) return keys;
+    keys = objective === "auto"
+      ? (autoWantsGold(state, all, options.autoMode ?? "likely") ? OBJECTIVES.gold : OBJECTIVES.silver)
+      : (OBJECTIVES[objective] ?? OBJECTIVES.silver);
+    return keys;
+  };
+
+  let pool = all;
+  if (allocate === "halving" && moves.length > 2) {
+    const rounds = Math.ceil(Math.log2(moves.length));
+    let spent = 0;
+    for (let r = 0; r < rounds && pool.length > 1; r++) {
+      // What is left, split evenly over the rounds that remain.
+      const perArm = Math.max(1, Math.floor((budget - spent) / ((rounds - r) * pool.length)));
+      for (const e of pool) {
+        const before = e.n;
+        extend(e, e.n + perArm);
+        spent += e.n - before;
+      }
+      chooseKeys();
+      // Drop the worse half on the primary key alone — that is the point of the
+      // method: a cheap, noisy verdict is enough to stop paying for a candidate
+      // that is not in the running.
+      const key = keys[0];
+      const sorted = [...pool].sort((a, b) => b.stats[key] - a.stats[key]);
+      pool = sorted.slice(0, Math.max(1, Math.ceil(sorted.length / 2)));
+    }
+    // Anything the rounds left unspent goes to the finalists.
+    if (pool.length > 1 && spent < budget) {
+      const perArm = Math.floor((budget - spent) / pool.length);
+      if (perArm > 0) for (const e of pool) extend(e, e.n + perArm);
+    }
+  } else {
+    for (const e of all) extend(e, N);
   }
 
-  // "auto" decides the target from the position itself, then ranks with it.
-  const rank = objective === "auto"
-    ? (autoWantsGold(state, all, options.autoMode ?? "likely") ? OBJECTIVES.gold : OBJECTIVES.silver)
-    : (OBJECTIVES[objective] ?? OBJECTIVES.silver);
-
-  let best = null;
-  for (const entry of all) {
-    if (!best || better(rank(entry.stats), rank(best.stats))) best = entry;
-  }
+  const best = pickBest(pool, chooseKeys(), options.tieZ ?? DEFAULT_TIE_Z);
+  // `all` still carries every candidate, including the ones dropped early —
+  // their stats are simply based on fewer playouts.
   return decorate(state, best.move, best.stats, all, N);
 }
 
-// Lexicographic comparison of the objective key vectors.
-function better(a, b) {
-  for (let i = 0; i < a.length; i++) {
-    if (Math.abs(a[i] - b[i]) > 1e-9) return a[i] > b[i];
+// Rank by the objective's keys in order, keeping whatever a key cannot
+// separate for the next key to decide.
+//
+// With every band at 0 this is plain lexicographic ranking with a 1e-9
+// tolerance — the same answer the old comparison gave, candidate order breaking
+// a perfect tie — so the switch is genuinely off when it is off.
+function pickBest(all, keys, tieZ) {
+  let pool = all;
+  for (let k = 0; k < keys.length; k++) {
+    const key = keys[k];
+    let lead = pool[0];
+    for (const e of pool) if (e.stats[key] > lead.stats[key] + 1e-9) lead = e;
+    // The last key decides outright — there is nothing left to defer to.
+    if (k === keys.length - 1 || pool.length === 1) return lead;
+    const z = tieZFor(tieZ, key);
+    const next = pool.filter((e) => e === lead || tied(lead, e, key, z));
+    if (next.length === 1) return next[0];
+    pool = next;
   }
-  return false;
+  return pool[0];
+}
+
+// Is the gap between two candidates on this key smaller than the noise in the
+// estimate of that gap?
+//
+// Paired, because both candidates played the same deck orders: the per-playout
+// difference is what carries the signal, and its spread is far smaller than the
+// spread of either candidate on its own.
+function tied(lead, other, key, z) {
+  const gap = lead.stats[key] - other.stats[key];
+  if (z <= 0) return gap <= 1e-9;
+  if (gap <= 1e-9) return true;
+  // Under halving the two candidates may have different playout counts; the
+  // shared prefix is the part that is actually paired, so the test uses that
+  // and nothing else.
+  const n = Math.min(lead.n, other.n);
+  if (n < 2) return false;
+  const a = lead.samples[key], b = other.samples[key];
+  let sum = 0;
+  for (let i = 0; i < n; i++) sum += a[i] - b[i];
+  const meanDiff = sum / n;
+  if (meanDiff <= 1e-9) return true;
+  let sq = 0;
+  for (let i = 0; i < n; i++) { const d = (a[i] - b[i]) - meanDiff; sq += d * d; }
+  const se = Math.sqrt(sq / (n - 1) / n);
+  return meanDiff <= z * se;
 }
 
 function decorate(state, move, stats, all, N) {

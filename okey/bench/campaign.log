@@ -1,0 +1,30 @@
+[23:14:14] campaign start — 3 shards on 12 cores
+[23:14:14] screen: 18 configs x 3 games, seed 1, until 23:58:00
+[23:14:14] screen done: 0 configs completed
+[23:14:14] verify:  on seeds 2,3 x 3 games, until 23:59:00
+[23:14:14] verify seed 2
+[23:14:15] verify seed 3
+[23:14:15] report written to okey/bench/overnight-report.md
+[23:14:15] campaign done
+[01:00:00] campaign start — 9 shards on 12 cores
+[01:00:00] screen: 18 configs x 1500 games, seed 1, until 03:00:00
+[02:49:17] screen done: 12 configs completed
+[02:49:17]   n96-halving            silver+ 72.4%  gold 7.7%  avg 311.1  value 0.877
+[02:49:17]   n96                    silver+ 71.7%  gold 7.3%  avg 313.0  value 0.863
+[02:49:17]   n64-halving            silver+ 70.7%  gold 7.1%  avg 309.4  value 0.849
+[02:49:17]   n64                    silver+ 69.8%  gold 6.5%  avg 311.2  value 0.827
+[02:49:17]   n48                    silver+ 70.7%  gold 5.9%  avg 310.9  value 0.825
+[02:49:17]   n48-tail3              silver+ 70.7%  gold 5.9%  avg 310.9  value 0.825
+[02:49:17]   n48-halving            silver+ 68.2%  gold 6.3%  avg 305.7  value 0.807
+[02:49:17]   n48-halving-band       silver+ 68.2%  gold 6.3%  avg 305.7  value 0.807
+[02:49:17]   n32                    silver+ 67.7%  gold 5.0%  avg 308.1  value 0.777
+[02:49:17]   baseline               silver+ 65.2%  gold 5.9%  avg 305.8  value 0.769
+[02:49:17]   tail3                  silver+ 65.2%  gold 5.9%  avg 305.8  value 0.769
+[02:49:17]   n24-halving            silver+ 62.1%  gold 5.6%  avg 296.9  value 0.733
+[02:49:17] verify: baseline, n96-halving, n96, n64-halving, n64 on seeds 2,3,4,5 x 3500 games, until 08:40:00
+[02:49:17] verify seed 2
+[05:26:26] verify seed 3
+[08:04:25] verify seed 4
+[08:42:02] out of time before seed 5
+[08:42:02] report written to okey/bench/overnight-report.md
+[08:42:02] campaign done

@@ -45,7 +45,7 @@
         </div>
       </div>
       <span class="discord">discord: @jogoe</span>
-      <span class="version">okey · v0.2<span class="version-views" id="versionViews"></span></span>
+      <span class="version">okey · v0.3<span class="version-views" id="versionViews"></span></span>
     </div>
   </header>
 
@@ -65,17 +65,17 @@
           <tbody>
             <tr>
               <td class="chest-name chest-gold" data-i18n="gold">Gold</td>
-              <td class="cmp-us">6.4%</td>
+              <td class="cmp-us">7.8%</td>
               <td class="cmp-them">0%</td>
             </tr>
             <tr>
               <td class="chest-name chest-silver" data-i18n="silver">Silver</td>
-              <td class="cmp-us">58.4%</td>
+              <td class="cmp-us">62.9%</td>
               <td class="cmp-them">35.8%</td>
             </tr>
             <tr>
               <td class="chest-name chest-bronze" data-i18n="bronze">Bronze</td>
-              <td class="cmp-us">35.2%</td>
+              <td class="cmp-us">29.3%</td>
               <td class="cmp-them">64.2%</td>
             </tr>
           </tbody>
@@ -307,10 +307,29 @@
     <span class="footer-sep">&middot;</span>
     <button class="footer-link" type="button" onclick="location.href='../'" data-i18n="allHelpers">All helpers</button>
     <span class="footer-sep">&middot;</span>
+    <button class="footer-link" type="button" data-open-modal="aboutModal" data-i18n="about">About this project</button>
+    <span class="footer-sep">&middot;</span>
     <button class="footer-link" type="button" data-open-modal="impressumModal" data-i18n="impressum">Imprint</button>
     <span class="footer-sep">&middot;</span>
     <button class="footer-link" type="button" data-open-modal="datenschutzModal" data-i18n="privacy">Privacy</button>
   </footer>
+
+  <div id="aboutModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card" tabindex="-1">
+      <button class="modal-close" type="button" aria-label="Close" data-close>&times;</button>
+      <h2 id="aboutTitle" data-i18n="aboutTitle">About this project</h2>
+
+      <h3 data-i18n="aboutSolverHeading">How the solver works</h3>
+      <div data-i18n-html="aboutSolverBody"></div>
+
+      <h3 data-i18n="aboutFindingsHeading">What we tried</h3>
+      <div data-i18n-html="aboutFindingsBody"></div>
+
+      <h3 data-i18n="aboutLimitsHeading">Why we can't be perfect</h3>
+      <div data-i18n-html="aboutLimitsBody"></div>
+    </div>
+  </div>
 
   <div id="impressumModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="impressumTitle" hidden>
     <div class="modal-backdrop" data-close></div>

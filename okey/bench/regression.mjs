@@ -13,8 +13,6 @@
 
 import { createState, COLORS, VALUES } from "../game.js";
 import { suggest, createPolicyCache } from "../policy.js";
-import { explainMove } from "../explain.js";
-import { setLang, t } from "../i18n.js";
 
 const ALL = [];
 for (const c of COLORS) for (const v of VALUES) ALL.push(`${c}${v}`);
@@ -44,14 +42,29 @@ const CASES = [
     want: { kind: "discard", cards: ["R1"] },
   },
   {
-    name: "2026-09-08 stream: keep the card that is one draw from 90",
-    // The first position of the same run, and one the helper always had right —
-    // here to catch an over-correction. R3-R4-R5 is a made 70; B3 is dead (B1
-    // and B5 gone) while R7 is one R6 away from a red 5-6-7.
+    name: "2026-09-08 stream: bank the made 70, do not fish for the 90",
+    // A case that was recorded with the WRONG expected move, and is kept as a
+    // warning about how that happened.
+    //
+    // The helper said "throw B3" and it was easy to justify: B3 is dead (B1 and
+    // B5 are gone) while R7 is one R6 away from a red 5-6-7 worth 90. Both facts
+    // are true, and the conclusion still does not follow.
+    //
+    // 20 cards are in play, so no exact solver reaches this. Settled instead by
+    // an oracle rollout of 4000 playouts per candidate — far past anything a
+    // live search can afford, all candidates on the same deck orders:
+    //
+    //   pick R4+R5+R3   41.3% silver   2.9% gold   E 295.5
+    //   discard B3      37.4% silver   0.0% gold   E 290.2
+    //
+    // Taking the made 70 now is the only line that keeps gold alive at all. The
+    // lesson is not about this board: an explanation that sounds right is not
+    // evidence, and a test whose expectation comes from the engine it is testing
+    // only locks in whatever that engine already believed.
     board: ["R7", "B3", "R4", "R5", "R3"],
     consumed: ["R2", "B1", "B5", "Y2", "Y8"],
     score: 0,
-    want: { kind: "discard", cards: ["B3"] },
+    want: { kind: "pick", cards: ["R4", "R5", "R3"] },
   },
 ];
 
@@ -65,28 +78,6 @@ function build(c) {
   return state;
 }
 
-// Mirrors main.js whyText(); kept here so the bench exercises the same path
-// the page does.
-function reason(state, move) {
-  if (move.kind !== "discard") return "";
-  const why = explainMove(state, move);
-  if (!why) return "";
-  const parts = [];
-  parts.push(why.dead
-    ? t("whyDead", { card: why.thrown })
-    : t("whyWeak", { card: why.thrown, max: why.thrownBest }));
-  if (why.keep) {
-    const cards = why.keepCards.join("+");
-    parts.push(why.keepMissing.length === 0
-      ? t("whyKeepReady", { cards, score: why.keepScore })
-      : t("whyKeep", { cards, missing: why.keepMissing.join("+"), score: why.keepScore }));
-  }
-  const alt = why.alternative;
-  if (alt && alt.kind === "points") parts.push(t("whyAltPoints", { card: alt.cards[0], points: alt.points }));
-  else if (alt && alt.kind === "chest") parts.push(t("whyAltChest", { card: alt.cards[0], silver: Math.round(alt.pSilver * 100) + "%" }));
-  return parts.join(" ");
-}
-
 let failed = 0;
 for (const c of CASES) {
   const state = build(c);
@@ -97,14 +88,7 @@ for (const c of CASES) {
   if (!ok) failed++;
   console.log(`${ok ? "ok  " : "FAIL"}  ${c.name}`);
   console.log(`      field ${c.board.join(" ")} @${c.score} -> ${got}${ok ? "" : `   (want ${want})`}`);
-  // The sentence the player reads. Printed here too, because a reason that
-  // contradicts the move is the same failure as a wrong move.
-  if (move) {
-    for (const lang of ["en", "de"]) {
-      setLang(lang);
-      console.log(`      [${lang}] ${reason(state, move)}`);
-    }
-  }
+  if (move && move.reasoning) console.log(`      ${move.reasoning}`);
 }
 
 console.log("");

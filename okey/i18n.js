@@ -60,6 +60,41 @@ const STRINGS = {
     // advice sentences, composed from the solver's structured answer
     advicePick: (p) => `Take ${p.hand} for ${p.score} points.`,
     adviceDiscard: (p) => `Throw ${p.card}.`,
+    about: "About this project",
+    aboutTitle: "About this project",
+    aboutSolverHeading: "How the solver works",
+    aboutSolverBody:
+      "<p>The helper is a clean-room reimplementation of the Okey card event. It never reads the game &mdash; you tell it which five cards are on the field, and it tells you whether to take a hand or throw a card.</p>" +
+      "<p>Three engines answer, depending on how much of the deck is left:</p>" +
+      "<ul>" +
+        "<li><b>Instant heuristic</b> &mdash; scores every hand against what its cards could have been worth instead, and every discard against what it gives up. Takes about a tenth of a millisecond, which is the answer you see the moment the fifth card lands.</li>" +
+        "<li><b>Policy rollout</b> &mdash; for every candidate move it plays the rest of the run 96 times against random deck orders and counts how often that ends in a chest. Every candidate sees the <em>same</em> orders, so the comparison is not draw luck. The budget is spent in rounds: measure everything, drop the worse half, and the moves that are genuinely competing get several times the attention of the ones already settled.</li>" +
+        "<li><b>Exact solver</b> &mdash; from 13 cards down the position is small enough to solve outright. Not an estimate: it computes the probability of reaching every possible score under perfect play, so the closing turns are provably right.</li>" +
+      "</ul>" +
+      "<p>The strong search runs in its own thread. That is why the suggestion appears instantly and sharpens a moment later, instead of the page freezing while it thinks.</p>" +
+      "<p>One rule shapes all of it: your score never goes down, so crossing a chest threshold locks that chest in. Chests are thresholds, not averages &mdash; at 280 points a guaranteed 20 is the whole game, and at 220 the same 20 is worth nothing.</p>",
+    aboutFindingsHeading: "What we tried",
+    aboutFindingsBody:
+      "<p><b>Worked:</b></p>" +
+      "<ul>" +
+        "<li>Scoring moves by <b>chest probability instead of points</b>. The single biggest jump: 46% to 66% silver-or-better.</li>" +
+        "<li>The <b>exact endgame solver</b>. Measured afterwards: of the positions that reach the exact phase already won, it converts <b>100%</b>, and the undecided ones at exactly the rate it calculates.</li>" +
+        "<li><b>More playouts, spent where the decision is close</b> &mdash; verified on decks the tuning never saw: silver-or-better 64.1% to 70.7%, gold 6.0% to 7.8%, measured over 3,000 identical decks.</li>" +
+      "</ul>" +
+      "<p><b>Didn&rsquo;t:</b></p>" +
+      "<ul>" +
+        "<li><b>Colour symmetry</b> in the exact solver. Red, blue and yellow are interchangeable, so this should have collapsed six states into one. It collapsed 1.03, and ran 10% slower.</li>" +
+        "<li><b>A noise tolerance on the ranking.</b> It won silver (+3.3pp) and gave up gold (&minus;1.1pp). Shipped, then rolled back the same evening &mdash; gold is what you are playing for once it is in reach.</li>" +
+        "<li><b>Ending every playout in the exact solver.</b> Looked good over 120 games, vanished over 5,000, and cost five times the thinking time.</li>" +
+        "<li><b>A playout tail that knows what a chest needs.</b> Sound idea, no effect at all: across 1,439 positions where it could have applied it changed <b>zero</b> decisions.</li>" +
+        "<li><b>Chasing gold for as long as it is arithmetically possible.</b> Loses both chests (60.9% against 65.8%). Giving up on gold at the right moment is worth more than hoping.</li>" +
+      "</ul>",
+    aboutLimitsHeading: "Why we can&rsquo;t be perfect",
+    aboutLimitsBody:
+      "<p>The deck is 24 cards and only its <em>order</em> is hidden, which makes the game small enough to solve exactly &mdash; eventually. The cost grows about 2.8&times; per extra card still in play: 13 cards take 0.4 seconds, 16 take 15 seconds, and 18 exhaust the search budget entirely. So the last turns are calculated and everything before them is estimated.</p>" +
+      "<p>What that costs is measurable. Playing with the draw order known in advance averages <b>377 points</b> and reaches silver in <b>every single deck</b>. The helper averages around 310. The gap is not effort, it is information nobody has while playing.</p>" +
+      "<p>Which also means: when a run ends in bronze, silver was reachable. We measured where it goes &mdash; the endgame plays those positions perfectly, so every lost run was decided earlier, while the deck was still too large to calculate. That is where the remaining work is.</p>",
+
     oddsExact: (p) => `Silver ${p.silver}, gold ${p.gold} — exact, not an estimate.`,
     oddsEstimate: (p) => `Silver about ${p.silver}, gold about ${p.gold}.`,
     handThree: (p) => `three ${p.value}s`,
@@ -167,6 +202,41 @@ const STRINGS = {
 
     advicePick: (p) => `Nimm ${p.hand} für ${p.score} Punkte.`,
     adviceDiscard: (p) => `Wirf ${p.card} ab.`,
+    about: "Über dieses Projekt",
+    aboutTitle: "Über dieses Projekt",
+    aboutSolverHeading: "Wie der Solver arbeitet",
+    aboutSolverBody:
+      "<p>Der Helfer ist eine Clean-Room-Nachbildung des Okey-Kartenevents. Er liest das Spiel nicht &mdash; du sagst ihm, welche fünf Karten auf dem Feld liegen, und er sagt dir, ob du eine Hand nehmen oder eine Karte werfen sollst.</p>" +
+      "<p>Je nachdem, wie viel vom Deck noch übrig ist, antworten drei Verfahren:</p>" +
+      "<ul>" +
+        "<li><b>Sofort-Heuristik</b> &mdash; bewertet jede Hand daran, was ihre Karten <em>stattdessen</em> hätten bringen können, und jeden Wurf daran, was er aufgibt. Braucht etwa eine zehntel Millisekunde &mdash; das ist die Antwort, die dasteht, sobald die fünfte Karte liegt.</li>" +
+        "<li><b>Policy-Rollout</b> &mdash; für jeden möglichen Zug spielt er den Rest der Runde 96-mal gegen zufällige Deckreihenfolgen durch und zählt, wie oft eine Truhe herauskommt. Alle Züge sehen <em>dieselben</em> Reihenfolgen, damit der Vergleich nicht am Ziehungsglück hängt. Das Budget wird in Runden vergeben: erst alles messen, die schlechtere Hälfte fällt raus, und die Züge, die wirklich konkurrieren, bekommen ein Vielfaches der Aufmerksamkeit derer, die längst entschieden sind.</li>" +
+        "<li><b>Exakter Solver</b> &mdash; ab 13 Karten ist die Stellung klein genug, um sie vollständig auszurechnen. Keine Schätzung: er berechnet die Wahrscheinlichkeit für jeden erreichbaren Punktestand bei perfektem Spiel. Die letzten Züge sind damit beweisbar richtig.</li>" +
+      "</ul>" +
+      "<p>Die starke Suche läuft in einem eigenen Thread. Deshalb erscheint der Vorschlag sofort und wird einen Moment später schärfer, statt dass die Seite beim Nachdenken hängt.</p>" +
+      "<p>Eine Regel prägt alles: dein Punktestand sinkt nie, eine überschrittene Truhenschwelle ist also endgültig gesichert. Truhen sind Schwellen, keine Durchschnitte &mdash; bei 280 Punkten sind sichere 20 das ganze Spiel, bei 220 sind dieselben 20 nichts wert.</p>",
+    aboutFindingsHeading: "Was wir probiert haben",
+    aboutFindingsBody:
+      "<p><b>Hat funktioniert:</b></p>" +
+      "<ul>" +
+        "<li>Züge nach <b>Truhen-Wahrscheinlichkeit statt nach Punkten</b> bewerten. Der größte Einzelsprung: von 46&nbsp;% auf 66&nbsp;% Silber-oder-besser.</li>" +
+        "<li>Der <b>exakte Endspiel-Solver</b>. Nachträglich gemessen: von den Stellungen, die bereits gewonnen ins Endspiel kommen, verwertet er <b>100&nbsp;%</b> &mdash; und die offenen genau zu der Quote, die er selbst ausrechnet.</li>" +
+        "<li><b>Mehr Playouts, verteilt dorthin, wo es eng ist</b> &mdash; bestätigt auf Decks, die beim Tuning nie vorkamen: Silber-oder-besser von 64,1&nbsp;% auf 70,7&nbsp;%, Gold von 6,0&nbsp;% auf 7,8&nbsp;%, gemessen über 3.000 identische Decks.</li>" +
+      "</ul>" +
+      "<p><b>Hat nicht funktioniert:</b></p>" +
+      "<ul>" +
+        "<li><b>Farbsymmetrie</b> im exakten Solver. Rot, Blau und Gelb sind austauschbar, das hätte sechs Zustände zu einem zusammenfallen lassen müssen. Es waren 1,03 &mdash; und 10&nbsp;% langsamer.</li>" +
+        "<li><b>Eine Rauschtoleranz beim Ranking.</b> Sie gewann Silber (+3,3&nbsp;Punkte) und gab Gold ab (&minus;1,1). Ausgeliefert und noch am selben Abend zurückgerollt &mdash; Gold ist das, worauf man spielt, sobald es in Reichweite ist.</li>" +
+        "<li><b>Jedes Playout im exakten Solver enden lassen.</b> Sah über 120 Spiele gut aus, verschwand über 5.000 &mdash; und kostete das Fünffache an Rechenzeit.</li>" +
+        "<li><b>Ein Playout-Schwanz, der die Truhenschwellen kennt.</b> Vernünftige Idee, null Wirkung: von 1.439 passenden Stellungen hat er <b>keine einzige</b> Entscheidung geändert.</li>" +
+        "<li><b>Gold jagen, solange es rechnerisch möglich ist.</b> Verliert beide Truhen (60,9&nbsp;% gegen 65,8&nbsp;%). Gold rechtzeitig aufzugeben ist mehr wert als zu hoffen.</li>" +
+      "</ul>",
+    aboutLimitsHeading: "Warum es nicht perfekt sein kann",
+    aboutLimitsBody:
+      "<p>Das Deck hat 24 Karten, und verborgen ist nur seine <em>Reihenfolge</em> &mdash; das macht das Spiel klein genug, um es exakt zu lösen. Irgendwann. Der Aufwand wächst je zusätzlicher Karte im Spiel um etwa das 2,8-Fache: 13 Karten brauchen 0,4&nbsp;Sekunden, 16 schon 15&nbsp;Sekunden, bei 18 ist das Suchbudget erschöpft. Die letzten Züge werden also gerechnet, alles davor geschätzt.</p>" +
+      "<p>Was das kostet, ist messbar. Wer die Ziehungsreihenfolge vorher kennt, kommt im Schnitt auf <b>377 Punkte</b> und erreicht Silber in <b>jedem einzelnen Deck</b>. Der Helfer liegt bei rund 310. Die Lücke ist kein Fleiss-, sondern ein Informationsproblem &mdash; niemand kennt die Reihenfolge beim Spielen.</p>" +
+      "<p>Das heißt aber auch: endet eine Runde in Bronze, wäre Silber erreichbar gewesen. Wir haben nachgemessen, wo es verloren geht &mdash; das Endspiel spielt diese Stellungen fehlerfrei, jede verlorene Runde wurde also früher entschieden, als das Deck noch zu groß zum Rechnen war. Genau dort liegt die verbleibende Arbeit.</p>",
+
     oddsExact: (p) => `Silber ${p.silver}, Gold ${p.gold} — exakt gerechnet, nicht geschätzt.`,
     oddsEstimate: (p) => `Silber etwa ${p.silver}, Gold etwa ${p.gold}.`,
     handThree: (p) => `den Drilling ${p.value}`,
@@ -269,6 +339,12 @@ const STRINGS = {
     discardCards: (p) => `${p.n} kart at`,
     advicePick: (p) => `${p.hand} al, ${p.score} puan.`,
     adviceDiscard: (p) => `${p.card} at.`,
+    about: "Proje hakkında",
+    aboutTitle: "Proje hakkında",
+    aboutSolverHeading: "Solver nasıl çalışır",
+    aboutFindingsHeading: "Neler denedik",
+    aboutLimitsHeading: "Neden kusursuz olamaz",
+
     oddsExact: (p) => `Gümüş ${p.silver}, altın ${p.gold} — tahmin değil, kesin hesap.`,
     oddsEstimate: (p) => `Gümüş yaklaşık ${p.silver}, altın yaklaşık ${p.gold}.`,
     handThree: (p) => `üç ${p.value}`,
@@ -347,6 +423,12 @@ const STRINGS = {
     discardCards: (p) => `Aruncă ${p.n} ${p.n === 1 ? "carte" : "cărți"}`,
     advicePick: (p) => `Ia ${p.hand} pentru ${p.score} puncte.`,
     adviceDiscard: (p) => `Aruncă ${p.card}.`,
+    about: "Despre acest proiect",
+    aboutTitle: "Despre acest proiect",
+    aboutSolverHeading: "Cum funcționează solverul",
+    aboutFindingsHeading: "Ce am încercat",
+    aboutLimitsHeading: "De ce nu poate fi perfect",
+
     oddsExact: (p) => `Argint ${p.silver}, aur ${p.gold} — calcul exact, nu estimare.`,
     oddsEstimate: (p) => `Argint aproximativ ${p.silver}, aur aproximativ ${p.gold}.`,
     handThree: (p) => `trei de ${p.value}`,
@@ -425,6 +507,12 @@ const STRINGS = {
     discardCards: (p) => `Descartar ${p.n} carta${p.n === 1 ? "" : "s"}`,
     advicePick: (p) => `Coge ${p.hand} por ${p.score} puntos.`,
     adviceDiscard: (p) => `Descarta ${p.card}.`,
+    about: "Sobre este proyecto",
+    aboutTitle: "Sobre este proyecto",
+    aboutSolverHeading: "Cómo funciona el solver",
+    aboutFindingsHeading: "Qué probamos",
+    aboutLimitsHeading: "Por qué no puede ser perfecto",
+
     oddsExact: (p) => `Plata ${p.silver}, oro ${p.gold} — cálculo exacto, no una estimación.`,
     oddsEstimate: (p) => `Plata en torno a ${p.silver}, oro en torno a ${p.gold}.`,
     handThree: (p) => `el trío de ${p.value}`,
@@ -503,6 +591,12 @@ const STRINGS = {
     discardCards: (p) => `Odrzuć ${p.n} kart${p.n === 1 ? "ę" : "y"}`,
     advicePick: (p) => `Weź ${p.hand} za ${p.score} punktów.`,
     adviceDiscard: (p) => `Odrzuć ${p.card}.`,
+    about: "O tym projekcie",
+    aboutTitle: "O tym projekcie",
+    aboutSolverHeading: "Jak działa solver",
+    aboutFindingsHeading: "Czego próbowaliśmy",
+    aboutLimitsHeading: "Dlaczego nie może być idealny",
+
     oddsExact: (p) => `Srebrna ${p.silver}, złota ${p.gold} — dokładny wynik, nie szacunek.`,
     oddsEstimate: (p) => `Srebrna około ${p.silver}, złota około ${p.gold}.`,
     handThree: (p) => `trójkę ${p.value}`,

@@ -1,0 +1,17 @@
+where the runs are decided — 250 games, seed 1, exact from 13 cards
+
+games reaching the exact phase: 250 of 250
+overall silver-or-better:       64.4%
+
+state on entering the exact phase        games        ended silver+
+----------------------------------------------------------------------
+already lost   (P(silver) < 5%)           54                 0.0%
+still live     (5-95%)                    54                35.2%
+already won    (P(silver) > 95%)         142               100.0%
+
+Reading it: every run in the first line was given away BEFORE the endgame —
+that share is the ceiling on what any endgame work can be worth. Any run in
+the last line that did not end silver is an endgame error. The middle line
+is the only place skill is still being applied: the solver rated those
+38.0% on average and they converted at
+35.2%.
