@@ -1,20 +1,9 @@
-// The helper's single entry point: use the strongest method the position can
-// afford.
-//
-//   <= EXACT_MAX_CARDS cards left  ->  exact solve (endgame.js). Optimal play,
-//                                      no approximation, both chests priced
-//                                      off the same value curve.
-//   more than that                 ->  policy rollout (rollout.js) over the
-//                                      v2 heuristic.
-//
-// The cutoff is a time budget, not a quality judgement. Exact solving costs
-// ~2.8x per extra card still in play (measured in bench/endgame-timing.mjs):
-// 12 cards is ~200 ms, 13 is ~630 ms, 16 is 22 s. Twelve keeps every
-// suggestion under a fifth of a second.
-//
-// In a normal game (about 4 picks and 11 discards) the exact phase begins
-// around the seventh action, so it covers every decision that actually settles
-// which chest you end up with.
+// Routes to the strongest available engine:
+//   ≤ EXACT_MAX_CARDS → exact MDP solver (EndgameSolver)
+//   otherwise         → policy rollout (rollout.js)
+// The cutoff is a latency budget, not a quality judgement.
+// 14 cards ≈ 1.9 s in the worker thread; sub-positions are memoised so
+// only the first exact turn is expensive.
 
 import { deckRemaining, CHEST_THRESHOLDS, scoreHand, BOARD_SIZE } from "./game.js";
 import { EndgameSolver, maskOf } from "./endgame.js";
@@ -22,7 +11,7 @@ import { makeAvailableSet, bestAchievable } from "./potential.js";
 import { suggestMoveRollout } from "./rollout.js";
 import { suggestMove } from "./solver.js";
 
-export const EXACT_MAX_CARDS = 13;
+export const EXACT_MAX_CARDS = 14;
 
 // Per-game scratchpad. The exact solver's table stays valid for the rest of a
 // game — every later position is a sub-position of the first one solved — so
@@ -82,18 +71,10 @@ function exactSuggestion(state, deck, cache) {
   };
 }
 
-// Is a better chest still reachable at all?
-//
-// Two ways to answer, and we take the sharper one available:
-//
-//   exact    — with few enough cards left, the value curve says it outright:
-//              the highest threshold with a non-zero probability IS the most
-//              that can still be scored.
-//   optimistic — otherwise, pack the best disjoint combos still alive into the
-//              rounds still available. That ignores the 5-slot window, so it
-//              over-estimates — which is the safe direction here: we only ever
-//              call a run finished when even the optimistic bound falls short.
-//
+// Checks whether a better chest is still reachable.
+// Uses the exact value curve when cards ≤ EXACT_MAX_CARDS, otherwise an
+// optimistic greedy bound (safe: we only call a run finished when even
+// the optimistic bound falls short).
 // Returns { canImprove, maxRemaining, nextThreshold, exact }.
 export function chestOutlook(state, options = {}) {
   const deck = deckRemaining(state);
@@ -152,8 +133,8 @@ export function chestOutlook(state, options = {}) {
   };
 }
 
-// options.cache — pass a createPolicyCache() per game to keep the exact table.
-// options.mode — "auto" (default), "exact", "rollout", "heuristic".
+// options.cache — per-game cache keeps the exact table alive across turns.
+// options.mode  — "auto" | "exact" | "rollout" | "heuristic".
 export function suggest(state, options = {}) {
   const deck = deckRemaining(state);
   const boardCards = state.board.filter(Boolean);
@@ -161,10 +142,7 @@ export function suggest(state, options = {}) {
   const cardsInPlay = deck.length + boardCards.length;
   const mode = options.mode ?? "auto";
 
-  // Nothing to search while the field is still being filled in: with fewer
-  // than 3 cards there is no hand to take, so the only advice is which card to
-  // throw. The cheap heuristic answers that in 0.1 ms and keeps card entry
-  // from feeling sticky.
+  // With < 3 cards there is no hand to score; heuristic handles discard-only.
   if (mode === "auto" && boardCards.length < 3) return suggestMove(state, options);
 
   if (mode === "heuristic") return suggestMove(state, options);

@@ -49,10 +49,11 @@ function bitsOf(mask) {
   for (let i = 0; i < CARD_COUNT; i++) if (mask & (1 << i)) out.push(i);
   return out;
 }
+// Hamming weight via SWAR — O(1), no branches, safe for 24-bit masks.
 export function popcount(m) {
-  let n = 0;
-  while (m) { m &= m - 1; n++; }
-  return n;
+  m = m - ((m >>> 1) & 0x55555555);
+  m = (m & 0x33333333) + ((m >>> 2) & 0x33333333);
+  return (((m + (m >>> 4)) & 0x0f0f0f0f) * 0x01010101) >>> 24;
 }
 
 // ---- precomputed scores for all C(24,3) triples ----
@@ -93,22 +94,8 @@ function subsetsOfSize(bits, k) {
 }
 
 
-// ---- colour symmetry (MEASURED, OFF BY DEFAULT) ----
-//
-// Red, blue and yellow are interchangeable, so a position and any recolouring
-// of it have identical value. Folding the memo key onto a canonical colouring
-// looks like a free 6x — and it is not.
-//
-// From a real position the set of cards in play is FIXED. Recolouring it
-// produces a card set that never occurs anywhere in that search tree, so
-// almost nothing collapses: measured 1.03x fewer states and ~10% slower from
-// the extra work per lookup (bench/symmetry-check.mjs; results identical to
-// the last digit). Symmetry would only pay off for a fully precomputed table
-// over all positions, which is a different project.
-//
-// Kept, off by default, so the idea is not retried blind.
-//
-// Colour c owns bits c*8 .. c*8+7, so a permutation is just moving three bytes.
+// Colour symmetry — measured 1.03× fewer states, ~10% slower overall.
+// Off by default; would only pay off for a fully precomputed table.
 const COLOR_PERMS = [[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
 
 function permuteMask(mask, perm) {
@@ -140,16 +127,13 @@ export class EndgameSolver {
     this.NT = 1;
   }
 
-  // Value curve of a position. Throws RangeError past nodeLimit.
-  // Sets the threshold grid from the root position and resets the table.
+  // Full solve from scratch; resets memo table and threshold grid.
   solve(available, board) {
     this.prepare(available);
     return this.value(available, board);
   }
 
-  // Set up the threshold grid without discarding the table — for playing a
-  // position out move by move, where every later state is a sub-state of the
-  // first and the memo stays valid.
+  // Configure thresholds without clearing the memo — sub-positions reuse it.
   prepare(available) {
     this.NT = Math.floor(popcount(available) / 3) * 10 + 1;
     this.nodes = 0;

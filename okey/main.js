@@ -112,6 +112,10 @@ function onSlotClick(slotIndex) {
   const card = state.board[slotIndex];
   if (!card) return;
 
+  // Distinguishes "adding the 3rd card" from "swapping an existing selection".
+  const sizeBefore = pickedSlots.size;
+
+  // Cycle selection: replacing the oldest card is less jarring than ignoring.
   // Toggle selection. Replacing the oldest pick when the user already has 3
   // selected feels nicer than ignoring the click.
   if (pickedSlots.has(slotIndex)) {
@@ -122,6 +126,26 @@ function onSlotClick(slotIndex) {
     const first = pickedSlots.values().next().value;
     pickedSlots.delete(first);
     pickedSlots.add(slotIndex);
+  }
+
+  // Auto-confirm when the 3rd card is added (not swapped), combo is valid,
+  // the worker has answered, and the selected slots match the suggestion.
+  // Without the slot check, picking a weaker combo would auto-confirm it.
+  if (sizeBefore < HAND_SIZE && pickedSlots.size === HAND_SIZE) {
+    const pickedCards = [...pickedSlots].map((i) => state.board[i]);
+    const { score } = scoreHand(pickedCards);
+    const suggestedSlots = new Set(lastSuggestion?.slots ?? []);
+    const matchesSuggestion = suggestedSlots.size > 0 &&
+      [...pickedSlots].every((s) => suggestedSlots.has(s));
+    if (score === 0) {
+      toast(t("pickScoresNothing"));
+    } else if (suggestionCache.strong && lastSuggestion?.kind === "pick" && matchesSuggestion) {
+      const r = confirmPick(state, [...pickedSlots]);
+      pickedSlots.clear();
+      if (r.gained > 0) toast(t("scored", { gained: r.gained, label: handLabel({ ...r, cards: r.hand }) }));
+      else toast(t("pickScoresNothing"));
+    }
+    // Solver recommends discard, or combo differs — leave cards highlighted.
   }
   refresh();
 }
@@ -160,15 +184,21 @@ function onConfirm() {
   }
   const r = confirmPick(state, slots);
   pickedSlots.clear();
-  toast(t("scored", { gained: r.gained, label: handLabel(r) }));
+  toast(t("scored", { gained: r.gained, label: handLabel({ ...r, cards: r.hand }) }));
   refresh();
 }
 
 function onAcceptSuggestion() {
+  // Space fires even when the button is disabled; apply the same gate.
+  if (els.acceptSuggestionBtn?.disabled) return;
   const move = lastSuggestion ?? suggest(state, { cache: policyCache });
   if (!move) { toast(t("addCardsFirst")); return; }
   if (move.kind === "pick") {
-    pickedSlots = new Set(move.slots);
+    // Solver only suggests scoring picks — confirm directly, symmetric with discard.
+    pickedSlots.clear();
+    const r = confirmPick(state, move.slots);
+    if (r.gained > 0) toast(t("scored", { gained: r.gained, label: handLabel({ ...r, cards: r.hand }) }));
+    else toast(t("pickScoresNothing"));
     refresh();
     return;
   }
@@ -185,6 +215,7 @@ function onAcceptSuggestion() {
 function onUndo() {
   if (!undo(state)) { toast(t("nothingUndo")); return; }
   pickedSlots.clear();
+  clearPendingColor();
   refresh();
 }
 
@@ -214,6 +245,7 @@ function onReset() {
   if (searchWorker) searchWorker.postMessage({ type: "reset" });
   overlayDismissed = false;
   hideRunOverlay();
+  clearPendingColor();
   refresh();
 }
 
@@ -245,6 +277,13 @@ function awaitingCards() {
   return empty > 0 && deckRemaining(state).length > 0;
 }
 
+// Maps async search state to the suggestion note text.
+function getSuggestionText(waiting, move, isStrong, missing) {
+  if (waiting) return t("awaitingCards", { n: missing });
+  if (!isStrong) return t("calculatingSuggestion");
+  return move ? adviceText(move) : t("noMovesPossible");
+}
+
 function refresh() {
   // Practice mode: any time the board has empty slots and the deck still has
   // cards, auto-draw to keep the field at 5. Single place handles all cases
@@ -254,8 +293,11 @@ function refresh() {
   const waiting = awaitingCards();
   const move = waiting ? null : computeSuggestion();
   lastSuggestion = move;
-  const suggested = move ? new Set(move.slots) : null;
-  const suggestionKind = move ? move.kind : null;
+  // Highlights only after the worker answers; the heuristic disagrees ~40%
+  // of the time, causing jarring pick/discard flips if shown early.
+  const showHints = suggestionCache.strong;
+  const suggested = (showHints && move) ? new Set(move.slots) : null;
+  const suggestionKind = showHints ? (move ? move.kind : null) : null;
 
   renderBoard(els.board, state, {
     picked: pickedSlots, suggested, suggestionKind, onSlotClick, awaiting: waiting,
@@ -272,13 +314,11 @@ function refresh() {
   updateSidebar(els, state, { picked: pickedSlots });
 
   const missing = state.board.filter((c) => !c).length;
-  els.suggestionNote.textContent = waiting
-    ? t("awaitingCards", { n: missing })
-    : (move ? adviceText(move) : t("suggestionPlaceholder"));
+  els.suggestionNote.textContent = getSuggestionText(waiting, move, suggestionCache.strong, missing);
   els.suggestionNote.classList.toggle("awaiting", waiting);
   els.suggestionNote.classList.toggle("pending", !waiting && !!move && !suggestionCache.strong);
   document.body.classList.toggle("awaiting-cards", waiting);
-  els.acceptSuggestionBtn.disabled = !move;
+  els.acceptSuggestionBtn.disabled = !move || !suggestionCache.strong;
   if (move && move.kind === "discard") {
     els.acceptSuggestionBtn.textContent = t("discardCards", { n: move.slots.length });
   } else {
@@ -334,6 +374,9 @@ function getWorker() {
       pendingKey = null;
       if (msg.type === "error") {
         console.warn("[okey] search failed, keeping the quick answer:", msg.message);
+        // Promote to strong so hints render from the heuristic fallback.
+        suggestionCache.strong = true;
+        refresh();
         return;
       }
       if (positionKey() !== msg.key) return;
@@ -346,6 +389,11 @@ function getWorker() {
       workerBroken = true;
       searchWorker = null;
       pendingKey = null;
+      // Worker crashed — promote heuristic answer to unblock the UI.
+      if (suggestionCache.key === positionKey() && suggestionCache.move) {
+        suggestionCache.strong = true;
+      }
+      refresh();
     };
   } catch {
     workerBroken = true;
@@ -360,6 +408,13 @@ function computeSuggestion() {
   // Instant answer so the UI has something to draw right now.
   const quick = suggest(state, { cache: policyCache, mode: "heuristic" });
   suggestionCache = { key, move: quick, strong: false };
+
+  // No moves — worker would return null too. Skip the round-trip so the
+  // end-of-run overlay appears immediately instead of after ~280 ms.
+  if (quick === null) {
+    suggestionCache = { key, move: null, strong: true, outlook: null };
+    return null;
+  }
 
   if (pendingKey !== key) {
     pendingKey = key;
@@ -518,9 +573,11 @@ function recordGlobalCompletion(tier) {
 // Refresh while the tab is actually being looked at. Four GETs a minute is far
 // inside the host's rate limit and keeps the panel alive during a session.
 fetchAllGlobalCounts();
-setInterval(() => {
+const globalCountInterval = setInterval(() => {
   if (document.visibilityState === "visible") fetchAllGlobalCounts();
 }, 60_000);
+// pagehide is BFCache-compatible; beforeunload/unload are not.
+window.addEventListener("pagehide", () => clearInterval(globalCountInterval));
 
 
 // ---------- advice wording ----------
@@ -562,7 +619,7 @@ document.querySelectorAll(".lang-btn").forEach((btn) => {
 });
 // Static text is swapped by i18n itself; the dynamic parts (suggestion,
 // button labels, session numbers) need a re-render.
-onLangChange(() => refresh());
+onLangChange(() => { clearPendingColor(); refresh(); });
 applyToDOM();
 
 // ---------- modals (imprint / privacy) ----------
@@ -617,6 +674,18 @@ if (els.likeBtn) {
 // ---------- keyboard ----------
 
 let pendingColor = null;
+let pendingColorTimer = 0;
+// Auto-expire so a forgotten R/B/Y keypress cannot combine minutes later.
+const PENDING_COLOR_TIMEOUT = 2000;
+function setPendingColor(k) {
+  pendingColor = k;
+  clearTimeout(pendingColorTimer);
+  pendingColorTimer = setTimeout(() => { pendingColor = null; }, PENDING_COLOR_TIMEOUT);
+}
+function clearPendingColor() {
+  pendingColor = null;
+  clearTimeout(pendingColorTimer);
+}
 document.addEventListener("keydown", (e) => {
   if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
 
@@ -626,10 +695,10 @@ document.addEventListener("keydown", (e) => {
   if (e.key === " ")         { e.preventDefault(); onAcceptSuggestion(); return; }
 
   const k = e.key.toUpperCase();
-  if (k === "R" || k === "B" || k === "Y") { pendingColor = k; return; }
+  if (k === "R" || k === "B" || k === "Y") { setPendingColor(k); return; }
   if (pendingColor && /^[1-8]$/.test(e.key)) {
     onPaletteClick(`${pendingColor}${e.key}`);
-    pendingColor = null;
+    clearPendingColor();
   }
 });
 
@@ -669,6 +738,7 @@ function onPracticeToggle() {
   document.body.classList.toggle("practice-on", practiceMode);
   // Toggling clears selection — the board is about to mutate either way.
   pickedSlots.clear();
+  clearPendingColor();
   refresh();
 }
 
