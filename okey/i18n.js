@@ -80,6 +80,7 @@ const STRINGS = {
         "<li>Scoring moves by <b>chest probability instead of points</b>. The single biggest jump: 46% to 66% silver-or-better.</li>" +
         "<li>The <b>exact endgame solver</b>. Measured afterwards: of the positions that reach the exact phase already won, it converts <b>100%</b>, and the undecided ones at exactly the rate it calculates.</li>" +
         "<li><b>More playouts, spent where the decision is close</b> &mdash; verified on decks the tuning never saw: silver-or-better 64.1% to 70.7%, gold 6.0% to 7.8%, measured over 3,000 identical decks.</li>" +
+        "<li><b>Making the search twice as fast, then spending it.</b> Scoring three cards became a lookup instead of a computation &mdash; provably the same decisions, half the thinking time &mdash; and the freed budget went into more playouts: silver-or-better 70.6% to 71.6%, gold 7.5% to 8.0%, on 6,000 decks the tuning never saw.</li>" +
       "</ul>" +
       "<p><b>Didn&rsquo;t:</b></p>" +
       "<ul>" +
@@ -225,6 +226,7 @@ const STRINGS = {
         "<li>Züge nach <b>Truhen-Wahrscheinlichkeit statt nach Punkten</b> bewerten. Der größte Einzelsprung: von 46&nbsp;% auf 66&nbsp;% Silber-oder-besser.</li>" +
         "<li>Der <b>exakte Endspiel-Solver</b>. Nachträglich gemessen: von den Stellungen, die bereits gewonnen ins Endspiel kommen, verwertet er <b>100&nbsp;%</b> &mdash; und die offenen genau zu der Quote, die er selbst ausrechnet.</li>" +
         "<li><b>Mehr Playouts, verteilt dorthin, wo es eng ist</b> &mdash; bestätigt auf Decks, die beim Tuning nie vorkamen: Silber-oder-besser von 64,1&nbsp;% auf 70,7&nbsp;%, Gold von 6,0&nbsp;% auf 7,8&nbsp;%, gemessen über 3.000 identische Decks.</li>" +
+        "<li><b>Die Suche doppelt so schnell machen &mdash; und den Gewinn ausgeben.</b> Drei Karten zu bewerten ist jetzt Nachschlagen statt Rechnen &mdash; beweisbar dieselben Z&uuml;ge, halbe Denkzeit &mdash; und das frei gewordene Budget floss in mehr Playouts: Silber-oder-besser von 70,6&nbsp;% auf 71,6&nbsp;%, Gold von 7,5&nbsp;% auf 8,0&nbsp;%, auf 6.000 Decks, die beim Tuning nie vorkamen.</li>" +
       "</ul>" +
       "<p><b>Hat nicht funktioniert:</b></p>" +
       "<ul>" +
