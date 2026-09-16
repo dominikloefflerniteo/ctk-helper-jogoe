@@ -1,0 +1,9 @@
+latency per decision — 14 games/config, every decision timed
+(the search runs in a worker; this is how long the provisional answer stands)
+
+config                    n     p50     p90     p99    worst    mean
+----------------------------------------------------------------------
+N=96                   188      79     155     456      518      86
+N=160                  192     124     249     430      476     122
+N=240                  192     183     358     478      484     171
+N=320                  190     249     451     598      648     223

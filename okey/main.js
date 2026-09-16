@@ -5,7 +5,7 @@
 import {
   createState, addCard, discardSlot, confirmPick, undo, resetState,
   usedCardSet, autoFillBoardFromDeck, deckRemaining, BOARD_SIZE, HAND_SIZE,
-  chestForScore,
+  chestForScore, scoreHand,
 } from "./game.js";
 import { suggest, createPolicyCache, chestOutlook } from "./policy.js";
 import { applyToDOM, setLang, onLangChange, t } from "./i18n.js";
@@ -97,6 +97,10 @@ function emptySession() {
 
 function onPaletteClick(cardId) {
   const slot = addCard(state, cardId);
+  if (slot === -2) {
+    toast(t("cardInPlay"));
+    return;
+  }
   if (slot < 0) {
     toast(t("fieldFull"));
     return;
@@ -126,6 +130,14 @@ function onSlotClick(slotIndex) {
 // stays greyed in the palette for the rest of this game.
 function onSlotRightClick(slotIndex) {
   if (!state.board[slotIndex]) return;
+  // Throwing a card only makes sense if something replaces it. With an empty
+  // deck the slot just stays empty for the rest of the run, and the card is
+  // consumed for nothing.
+  // Reported by Flavius (flaviusrzv/metin2-okey-helper), 2026-09-15.
+  if (deckRemaining(state).length === 0) {
+    toast(t("deckEmptyNoThrow"));
+    return;
+  }
   pickedSlots.delete(slotIndex);
   discardSlot(state, slotIndex);
   refresh();
@@ -136,10 +148,19 @@ function onConfirm() {
     toast(t("select3"));
     return;
   }
-  const r = confirmPick(state, [...pickedSlots]);
+  // Confirming three cards that score nothing used to CONSUME them — they left
+  // the deck for good, for zero points, and the run was quietly damaged. The
+  // toast said "no combination" after the fact, which read like an explanation
+  // rather than the loss it was.
+  // Reported by Flavius (flaviusrzv/metin2-okey-helper), 2026-09-15.
+  const slots = [...pickedSlots];
+  if (scoreHand(slots.map((s) => state.board[s])).score === 0) {
+    toast(t("pickScoresNothing"));
+    return;
+  }
+  const r = confirmPick(state, slots);
   pickedSlots.clear();
-  if (r.gained > 0) toast(t("scored", { gained: r.gained, label: handLabel(r) }));
-  else toast(t("noCombo"));
+  toast(t("scored", { gained: r.gained, label: handLabel(r) }));
   refresh();
 }
 

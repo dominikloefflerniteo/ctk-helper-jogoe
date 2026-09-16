@@ -1,0 +1,21 @@
+13831 inputs checked, 0 mismatches
+12 passed, 0 failed
+value curve: 0:1.00  10:1.00  20:1.00  30:1.00  40:1.00  50:1.00  60:1.00  70:1.00  80:1.00  90:1.00  100:1.00  110:0.00  120:0.00  130:0.00  140:0.00  150:0.00  160:0.00  170:0.00  180:0.00  190:0.00  200:0.00
+best for need 100: {"p":1,"kind":"pick","cards":["R6","R7","R8"],"gained":100}
+best for need 40 : {"p":1,"kind":"pick","cards":["R6","R7","R8"],"gained":100}
+nodes 14, 3 ms
+24 cards | rollout |  187 ms | Pick 6-7-8 mixed for 60 pts. P(silver)=59% · P(gold)=4% · E[final]≈303
+21 cards | rollout |  118 ms | Discard R4. P(silver)=66% · P(gold)=2% · E[final]≈309 (96 rollouts)
+20 cards | rollout |  116 ms | Discard Y1. P(silver)=97% · P(gold)=10% · E[final]≈355 (96 rollouts)
+19 cards | rollout |  141 ms | Pick 3-4-5 same color for 70 pts. P(silver)=95% · P(gold)=16% · E[fina
+16 cards | rollout |   89 ms | Discard R3. P(silver)=100% · P(gold)=3% · E[final]≈360 (96 rollouts)
+15 cards | rollout |   79 ms | Discard R2. P(silver)=100% · P(gold)=0% · E[final]≈358 (96 rollouts)
+14 cards | rollout |   69 ms | Pick 6-7-8 mixed for 60 pts. P(silver)=100% · P(gold)=0% · E[final]≈34
+11 cards | exact   |   32 ms | Discard B1. Silver 100% · gold 0% — exact, not an estimate.
+10 cards | exact   |    0 ms | Discard B2. Silver 100% · gold 0% — exact, not an estimate.
+ 9 cards | exact   |    0 ms | Pick 3-4-5 same color for 70 pts. Silver 100% · gold 0% — exact, not a
+ 6 cards | exact   |    0 ms | Discard R1. Silver 100% · gold 0% — exact, not an estimate.
+ 5 cards | exact   |    0 ms | Pick 5-6-7 same color for 90 pts. Silver 100% · gold 0% — exact, not a
+final score: 350
+partial-field positions checked: 6710
+OK — an untyped card never costs a chest

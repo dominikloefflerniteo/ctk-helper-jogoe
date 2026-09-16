@@ -1,0 +1,2 @@
+{"cfg":{"policy":"combo","objective":"auto","exactMaxCards":13,"N":96,"goldMin":0.2},"games":2500,"seed":4,"requested":2500,"mean":310.5,"sd":53.95136698916905,"pGold":0.064,"pSilver":0.6484,"pSilverOrBetter":0.7124,"picks":4.4848,"discards":9.022,"value":0.8404,"seconds":13074}
+{"cfg":{"policy":"combo","objective":"auto","exactMaxCards":13,"N":96,"goldMin":0.1},"games":2500,"seed":4,"requested":2500,"mean":310.708,"sd":55.318159188461664,"pGold":0.0744,"pSilver":0.6276,"pSilverOrBetter":0.702,"picks":4.4616,"discards":9.1004,"value":0.8508,"seconds":13129}

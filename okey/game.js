@@ -41,28 +41,66 @@ export function scoreMixedSeq(low) {
 
 // Score a 3-card hand. Returns { score, type, label } where type ∈
 // {"three", "sameSeq", "mixedSeq", "none"} and label is human-readable.
-export function scoreHand(cards) {
-  if (!cards || cards.length !== 3) return { score: 0, type: "none", label: "—" };
-  const parsed = cards.map(parseCardId);
-  const values = parsed.map((c) => c.value).sort((a, b) => a - b);
-  const colors = parsed.map((c) => c.color);
+// The score of three cards is a pure function of those three cards, and there
+// are only 24 cards — so it is a lookup, not a computation. The old version
+// allocated three objects (parseCardId), three arrays (map/map/sort) and a
+// template-literal label on EVERY call, and a 2026-09-15 CPU profile put it at
+// 20% of all search time: it runs in the innermost loop of every playout.
+//
+// The table is built once over every a <= b <= c triple (duplicates included,
+// so degenerate input behaves exactly as it did before) and holds SHARED frozen
+// result objects. A lookup therefore allocates nothing at all.
+//
+// Exhaustively verified identical to the old implementation over all 24^3
+// ordered triples by bench/scorehand-equiv.mjs.
 
-  if (values[0] === values[1] && values[1] === values[2]) {
-    const v = values[0];
-    return { score: scoreThreeOfAKind(v), type: "three", label: `Three ${v}s` };
+const CARD_INDEX = new Map();
+for (let ci = 0; ci < COLORS.length; ci++) {
+  for (let vi = 0; vi < VALUES.length; vi++) {
+    CARD_INDEX.set(cardId(COLORS[ci], VALUES[vi]), ci * 8 + vi);
   }
+}
 
-  const isSeq = values[1] === values[0] + 1 && values[2] === values[1] + 1;
-  if (isSeq) {
-    const low = values[0];
-    const allSameColor = colors[0] === colors[1] && colors[1] === colors[2];
-    if (allSameColor) {
-      return { score: scoreSameColorSeq(low), type: "sameSeq", label: `${low}-${low + 1}-${low + 2} same color` };
+const INVALID_HAND = Object.freeze({ score: 0, type: "none", label: "—" });
+const NO_COMBO = Object.freeze({ score: 0, type: "none", label: "No combo" });
+
+// Indexed by a * 576 + b * 24 + c with a <= b <= c (indices, not values).
+const COMBO_TABLE = new Array(24 * 24 * 24).fill(NO_COMBO);
+for (let a = 0; a < 24; a++) {
+  for (let b = a; b < 24; b++) {
+    for (let c = b; c < 24; c++) {
+      const va = (a & 7) + 1, vb = (b & 7) + 1, vc = (c & 7) + 1;
+      const values = [va, vb, vc].sort((x, y) => x - y);
+      let entry = NO_COMBO;
+      if (values[0] === values[1] && values[1] === values[2]) {
+        const v = values[0];
+        entry = Object.freeze({ score: scoreThreeOfAKind(v), type: "three", label: `Three ${v}s` });
+      } else if (values[1] === values[0] + 1 && values[2] === values[1] + 1) {
+        const low = values[0];
+        const sameColour = (a >> 3) === (b >> 3) && (b >> 3) === (c >> 3);
+        entry = sameColour
+          ? Object.freeze({ score: scoreSameColorSeq(low), type: "sameSeq", label: `${low}-${low + 1}-${low + 2} same color` })
+          : Object.freeze({ score: scoreMixedSeq(low), type: "mixedSeq", label: `${low}-${low + 1}-${low + 2} mixed` });
+      }
+      COMBO_TABLE[a * 576 + b * 24 + c] = entry;
     }
-    return { score: scoreMixedSeq(low), type: "mixedSeq", label: `${low}-${low + 1}-${low + 2} mixed` };
   }
+}
 
-  return { score: 0, type: "none", label: "No combo" };
+export function scoreHand(cards) {
+  if (!cards || cards.length !== 3) return INVALID_HAND;
+  let a = CARD_INDEX.get(cards[0]);
+  let b = CARD_INDEX.get(cards[1]);
+  let c = CARD_INDEX.get(cards[2]);
+  // An id the table does not know (malformed input) must not silently score 0
+  // against a wrong slot, so it takes the same "no combo" answer as before.
+  if (a === undefined || b === undefined || c === undefined) return NO_COMBO;
+  // Sort three integers without allocating an array.
+  let t;
+  if (a > b) { t = a; a = b; b = t; }
+  if (b > c) { t = b; b = c; c = t; }
+  if (a > b) { t = a; a = b; b = t; }
+  return COMBO_TABLE[a * 576 + b * 24 + c];
 }
 
 export function chestForScore(score) {
@@ -119,7 +157,20 @@ export function firstEmptySlot(state) {
 
 // addCard: place into the first empty slot. Returns slot index used, or -1
 // if board is full.
+// Returns the slot used, -1 if the field is full, and -2 if that exact card is
+// already in play.
+//
+// The palette greys out cards that are on the board or already consumed, but
+// the keyboard path (press R, then 6) never goes through the palette — so R6
+// could be entered twice. Two copies of one card cannot exist in the real game,
+// and every solver number downstream is computed from the card set, so a
+// duplicate silently corrupts the rest of the run.
+// Reported by Flavius (flaviusrzv/metin2-okey-helper), 2026-09-15.
 export function addCard(state, cardId) {
+  if (state.consumed.has(cardId)) return -2;
+  for (let i = 0; i < state.board.length; i++) {
+    if (state.board[i] === cardId) return -2;
+  }
   const idx = firstEmptySlot(state);
   if (idx < 0) return -1;
   setSlot(state, idx, cardId);
@@ -213,14 +264,29 @@ export function usedCardSet(state) {
 
 // Cards still in the deck (not on the board and not consumed). Used by the
 // solver for discard EV and by practice mode for random draws.
+// Every card id in the canonical order (colours outer, values inner). Callers
+// depend on that order being stable, so it is the same order the old nested
+// loop produced.
+export const ALL_CARD_IDS = [];
+for (const color of COLORS) for (const v of VALUES) ALL_CARD_IDS.push(cardId(color, v));
+
+// Called several times per decision and once per playout step. The old version
+// allocated a fresh Set (copying `consumed`) and built all 24 ids as template
+// literals on EVERY call — 8.4% of search time in the 2026-09-15 profile, all
+// of it rebuilding constants. The ids are now shared, and with a board of at
+// most five slots a linear scan beats constructing a Set to query it.
 export function deckRemaining(state) {
-  const used = usedCardSet(state);
+  const consumed = state.consumed;
+  const board = state.board;
   const out = [];
-  for (const color of COLORS) {
-    for (const v of VALUES) {
-      const id = `${color}${v}`;
-      if (!used.has(id)) out.push(id);
+  for (let i = 0; i < ALL_CARD_IDS.length; i++) {
+    const id = ALL_CARD_IDS[i];
+    if (consumed.has(id)) continue;
+    let onBoard = false;
+    for (let s = 0; s < board.length; s++) {
+      if (board[s] === id) { onBoard = true; break; }
     }
+    if (!onBoard) out.push(id);
   }
   return out;
 }

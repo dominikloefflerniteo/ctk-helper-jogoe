@@ -1,0 +1,4 @@
+[
+  {"policy":"combo","objective":"auto","exactMaxCards":13,"N":96,"goldMin":0.1,"heuristic":"flavius","base":{"lambda":10,"typeAware":true,"residualWeight":1.0}},
+  {"policy":"combo","objective":"auto","exactMaxCards":13,"N":240,"goldMin":0.1,"heuristic":"flavius","base":{"lambda":10,"typeAware":true,"residualWeight":1.0}}
+]

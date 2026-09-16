@@ -1,0 +1,4 @@
+[shard 5/9] phase 1: 2 configs, 1000 games each, deadline 15/09/2026, 03:30:00
+[shard 7] {"policy":"combo","objective":"auto","exactMaxCards":13,"N":160,"goldMin":0.02} -> silver+ 68.7% gold 9.1% avg 309.3 (7350s)
+[shard 7] stopping early: 27 min left, a config takes ~123 min
+[shard 7] finished 1/2 configs

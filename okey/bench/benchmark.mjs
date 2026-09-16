@@ -250,6 +250,38 @@ if (roundsModel) {
   console.log(`best by gold+silver rate: ${best.label} (${(best.pGold * 100).toFixed(1)}% gold, ${(best.pSilver * 100).toFixed(1)}% silver, avg ${best.mean.toFixed(1)})`);
   const bestMean = rows.slice().sort((a, b) => b.mean - a.mean)[0];
   console.log(`best by average score:    ${bestMean.label} (avg ${bestMean.mean.toFixed(1)})`);
+} else if (argv.includes("--tune")) {
+  // Tune the two knobs that separate us from m2-helper's published rates
+  // (2026-09-14): the gold threshold and the playout budget. Their engine is
+  // Rust/WASM at 240 PIMC samples with a gold floor of 20/200 permille; ours
+  // was JS at N=96 with a hardcoded 10% floor. Both knobs move the same two
+  // numbers in opposite directions, so they are swept TOGETHER — tuning either
+  // alone is what iteration 9 already proved cannot see the trade.
+  //
+  //   --goldMins=0.02,0.05   which floors to try (default: the grid below)
+  //   --ns=96,160,240        which playout budgets to try
+  const parseList = (flag, fallback) => {
+    const a = argv.find((x) => x.startsWith(flag));
+    return a ? a.slice(flag.length).split(",").map(Number) : fallback;
+  };
+  const goldMins = parseList("--goldMins=", [0.02, 0.04, 0.06, 0.10, 0.20]);
+  const ns = parseList("--ns=", [96]);
+  const rows = [];
+  for (const N of ns) {
+    for (const goldMin of goldMins) {
+      rows.push(runConfig(`g=${goldMin} N=${N}`,
+        { policy: "combo", objective: "auto", goldMin, N }, games, seed));
+    }
+  }
+  printTable(rows);
+  // Rank the way the player experiences it: any chest better than bronze,
+  // with gold as the tiebreak. NOT gold+silver summed — that hides a config
+  // that buys 1pp of gold with 3pp of silver.
+  const ranked = rows.slice().sort((a, b) =>
+    (b.pGold + b.pSilver) - (a.pGold + a.pSilver) || b.pGold - a.pGold);
+  for (const r of ranked.slice(0, 5)) {
+    console.log(`${r.label.padEnd(16)} silver+ ${pct(r.pGold + r.pSilver)}   gold ${pct(r.pGold)}   avg ${num(r.mean)}`);
+  }
 } else if (argv.includes("--combo")) {
   // Head-to-head of what could ship.
   printTable([

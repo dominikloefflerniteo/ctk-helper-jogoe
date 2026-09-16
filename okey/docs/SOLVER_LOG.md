@@ -552,3 +552,72 @@ Second bug on the same screen: `checkRunFinished` gated only on
 skips the search entirely — so the flag still carried the *previous* position's
 strong answer, and the exact solve ran back inside the click path. It now also
 requires the cached key to match the position on screen.
+
+---
+
+## 2026-09-16 — speed first, then the budget it bought (SHIPPED)
+
+Prompted by m2-helper.com publishing better rates than ours (10.2% gold /
+72.4% silver+ against our 7.4% / 70.3%). Reading their code: same game, same
+scoring, same 400/300 thresholds — but 240 PIMC samples in Rust/WASM against
+our 96 in JavaScript, and a gold floor exposed as 20/200 permille against our
+hardcoded 10%.
+
+**The gold floor was a dead end.** A full sweep (0.02 … 0.20) on fresh seeds
+says 0.10 is already right. Their gold number is reproducible exactly — 10.2%
+at goldMin 0.02 — but it costs 8.7pp of silver. There is no setting of this
+knob that buys both; the curve is a trade, not a frontier.
+
+**Their advantage was the runtime, so the answer was to stop being slow.** A
+CPU profile put `scoreHand` at 20% of all search time: it allocated three
+objects, three arrays and a template-literal label per call, in the innermost
+loop of every playout, to compute a pure function of three cards from a
+24-card deck. It is now a precomputed table of shared frozen results.
+`deckRemaining` (8.4%) was rebuilding all 24 id strings and copying a Set on
+every call; the ids are now shared and the board is scanned directly.
+
+Idle-machine p90 per decision, same harness, same decks:
+
+| N | before | after |
+|---|---|---|
+| 96 | 311 ms | **157 ms** |
+| 160 | 433 ms | **280 ms** |
+| 240 | 647 ms | 360 ms |
+
+Both changes are pure speed and were required to prove it: `scoreHand` is
+checked against a verbatim copy of the old implementation over **all 13,831
+possible inputs**, `deckRemaining` over 4,000 random states, and `chestOutlook`
+position-by-position over ~5,000 full AND partial boards. The v2 reference row
+(293.5 / 4.8% / 46.2%) is unchanged, which is the end-to-end proof that play
+did not move.
+
+**Then the budget that bought.** Fresh seeds 2-4, 6000 games per config:
+
+| config | silver+ | gold | avg | vs control |
+|---|---|---|---|---|
+| base N=96 (control) | 70.6% | 7.5% | 311.3 | — |
+| flavius N=96 | 70.9% | 7.5% | 312.0 | +0.22pp / +0.02pp |
+| **flavius N=160 (shipped)** | **71.6%** | **8.0%** | 312.5 | +0.93pp z=1.13 / +0.47pp z=0.96 |
+| flavius N=240 | 72.1% | 8.6% | 313.7 | +1.48pp z=1.80 / +1.07pp z=2.15 |
+
+**No single comparison here is convincing on its own, and five configs share
+one control, so the individual z-values are weaker than they look.** What
+carries the decision is that the gain is monotone in N and same-signed on all
+three seeds — the same shape as the 24 -> 64 -> 96 curve measured in 2026-09-09.
+
+N=160 ships because it is the best config that is *faster than what it
+replaces* (280 ms against the old 311 ms). N=240 is the better player and is
+deliberately left on the table: it costs more lag than the config it replaces.
+
+**The playout heuristic (typeMul + residual synergy + lambda 10) is Flavius's
+contribution** (flaviusrzv/metin2-okey-helper), measured rather than adopted:
+his claimed +4.3 avg / +1.3pp gold on the v2 heuristic reproduces to the
+decimal. Note it is worth **nothing** at N=96 (+0.22pp, z=0.26) — it only pays
+once there are playouts to carry it, so it must never be tuned at low N. Only
+the PLAYOUT heuristic changed; the instant provisional answer is still plain v2
+(lambda 6), which is the combination that was measured.
+
+Rejected from the same contribution: `AUTO_GOLD_MIN` 0.10 -> 0.20, which a
+10,000-game fresh-seed run measures as **worse** (gold -0.94pp, z=-2.62, for a
+silver gain inside the noise).
+

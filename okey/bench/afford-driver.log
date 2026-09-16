@@ -1,0 +1,30 @@
+[01:00:00] === okey affordable-config campaign starting ===
+[01:00:01] node v24.13.0, 9 shards
+[01:00:01] step 0: latency baseline on an idle machine
+latency per decision — 14 games/config, every decision timed
+(the search runs in a worker; this is how long the provisional answer stands)
+
+config                    n     p50     p90     p99    worst    mean
+----------------------------------------------------------------------
+N=96                   188      79     155     456      518      86
+N=160                  192     124     249     430      476     122
+N=240                  192     183     358     478      484     171
+N=320                  190     249     451     598      648     223
+[01:01:56] phase 1: 1000 games/config, seed 1, deadline 2026-09-16T04:15
+[02:22:10] phase 1 done: 12 results
+[select] phase 1: 12 full configs, top 2:
+  flavius N=160  goldMin=0.1  silver+ 73.6%  gold 9.1%  avg 314.3  (1000 games)
+  flavius N=160  goldMin=0.06  silver+ 73.4%  gold 9.6%  avg 314.1  (1000 games)
+[select] wrote 3 configs (incl. the shipping control) -> afford-phase2-configs.json
+[02:22:10] phase 2: fresh seeds 2-4, 2000 games/config
+[04:14:12] === campaign finished ===
+[04:14:12] final pooled results: 9 rows in afford-final.jsonl
+[04:14:13] === release gate ===
+[04:14:13]   PASS scorehand-equiv
+[04:14:13]   PASS smoke-uifixes
+[04:14:13]   PASS smoke-endgame
+[04:14:14]   PASS smoke-policy
+[04:18:09]   PASS smoke-outlook-partial
+[04:18:13]   baseline row: v2 (default) 293.5    62.7     300    370    510    4.8%    46.2%    49.0%    3.52  10.97
+[04:18:13]   PASS v2 baseline unchanged
+[04:18:13] === release gate GREEN — safe to publish once a config is chosen ===

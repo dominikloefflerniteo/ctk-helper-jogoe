@@ -42,7 +42,32 @@ import { EndgameSolver, maskOf } from "./endgame.js";
 // Cost, measured single-process: ~146 ms per decision (p90 299 ms, worst 415 ms)
 // against ~41 ms before — all of it in the worker, none of it in front of a
 // click. The instant heuristic answer is still what paints first.
-const DEFAULT_N = 96;
+// 2026-09-16: raised 96 -> 160 after the scoring/deck optimisations made it
+// CHEAPER than the old 96. Measured on an idle machine, p90 per decision:
+//
+//   old code, N=96    311 ms   <- what shipped until today
+//   new code, N=160   280 ms   <- what ships now
+//   new code, N=240   360 ms   <- better rate still, but above the old lag
+//
+// Rate on fresh seeds 2-4, 6000 games: silver+ 70.6% -> 71.6%, gold 7.5% ->
+// 8.0%. Neither difference is individually significant (z = 1.13 / 0.96); what
+// carries it is that the gain is monotone in N across 96/160/240 and the sign
+// is the same on all three seeds. N=240 is the better player and is left on the
+// table deliberately: it costs more lag than the config it replaces.
+const DEFAULT_N = 160;
+
+// Options for the heuristic that finishes each playout. Contributed by Flavius
+// (flaviusrzv/metin2-okey-helper) and measured here, not adopted on faith:
+// type-aware pick damage, residual synergy, lambda 10.
+//
+// NB this is the PLAYOUT heuristic only. The instant provisional answer the UI
+// paints first still runs plain v2 (lambda 6) — that is exactly the combination
+// the benchmark measured, so it is exactly the combination that ships.
+//
+// Worth knowing before tuning further: at N=96 this heuristic is worth nothing
+// measurable (+0.22pp silver+, z=0.26). It only starts paying once there are
+// enough playouts to carry it, which is why it must never be tuned at low N.
+const DEFAULT_BASE = { lambda: 10, typeAware: true, residualWeight: 1.0 };
 
 // Where a rollout stops guessing and starts knowing. Below this many cards in
 // play the exact solver evaluates the position outright, so a playout no
@@ -138,7 +163,7 @@ const DEFAULT_ALLOCATE = "halving";
 // Both are measured in bench/benchmark.mjs; the default is set from that.
 export const AUTO_GOLD_MIN = 0.10;
 
-function autoWantsGold(state, all, mode) {
+function autoWantsGold(state, all, mode, goldMin = AUTO_GOLD_MIN) {
   if (mode === "feasible") {
     const deck = deckRemaining(state);
     let filled = 0;
@@ -147,7 +172,7 @@ function autoWantsGold(state, all, mode) {
     const ceiling = bestAchievable(makeAvailableSet(deck, state.board), rounds);
     return state.score + ceiling >= CHEST_THRESHOLDS.gold;
   }
-  for (const entry of all) if (entry.stats.pGold >= AUTO_GOLD_MIN) return true;
+  for (const entry of all) if (entry.stats.pGold >= goldMin) return true;
   return false;
 }
 
@@ -243,7 +268,7 @@ function playout(state, rand, baseOptions, ctx) {
 
 export function suggestMoveRollout(state, options = {}) {
   const N = options.N ?? DEFAULT_N;
-  const baseOptions = options.base ?? {};
+  const baseOptions = options.base ?? DEFAULT_BASE;
   const moves = candidates(state);
   if (moves.length === 0) return null;
   if (moves.length === 1) return decorate(state, moves[0], null);
@@ -324,7 +349,8 @@ export function suggestMoveRollout(state, options = {}) {
   const chooseKeys = () => {
     if (keys) return keys;
     keys = objective === "auto"
-      ? (autoWantsGold(state, all, options.autoMode ?? "likely") ? OBJECTIVES.gold : OBJECTIVES.silver)
+      ? (autoWantsGold(state, all, options.autoMode ?? "likely", options.goldMin ?? AUTO_GOLD_MIN)
+          ? OBJECTIVES.gold : OBJECTIVES.silver)
       : (OBJECTIVES[objective] ?? OBJECTIVES.silver);
     return keys;
   };

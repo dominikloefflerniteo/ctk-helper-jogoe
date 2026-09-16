@@ -1,0 +1,18 @@
+[01:00:00] === okey gold-threshold campaign starting ===
+[01:00:00] node v24.13.0, 9 shards
+[01:00:00] phase 1: 1000 games/config, seed 1, deadline 2026-09-15T03:30
+[03:02:31] phase 1 done: 9 results
+[select] phase 1: 9 full configs, top 4:
+  goldMin=0.2 N=96  silver+ 73.5%  gold 7.5%  avg 313.1  (1000 games)
+  goldMin=0.15 N=96  silver+ 73.0%  gold 7.8%  avg 312.9  (1000 games)
+  goldMin=0.1 N=96  silver+ 73.0%  gold 7.8%  avg 312.5  (1000 games)
+  goldMin=0.08 N=96  silver+ 72.2%  gold 8.7%  avg 312.5  (1000 games)
+[select] wrote 4 configs (incl. the shipping control) -> goldmin-phase2-configs.json
+[03:02:31] phase 2: 3000 games/config, seed 1, deadline 2026-09-15T06:40
+[05:31:37] phase 2 done: 4 results
+[select] phase 2: 4 full configs, top 1:
+  goldMin=0.2 N=96  silver+ 72.8%  gold 7.4%  avg 312.9  (3000 games)
+[select] wrote 2 configs (incl. the shipping control) -> goldmin-phase3-configs.json
+[05:31:37] phase 3: fresh seeds 2-5, 2500 games each
+[09:10:41] === campaign finished ===
+[09:10:41] final pooled results: 8 rows in goldmin-final.jsonl

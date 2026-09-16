@@ -237,9 +237,42 @@ export function picksLeft(state) {
   return Math.floor((deck.length + filled) / 3);
 }
 
+// Two ideas contributed by Flavius (flaviusrzv/metin2-okey-helper, 2026-09-15),
+// ported here as OPTIONS so they can be measured in the shipping policy before
+// anything changes. Both default OFF, so the helper plays exactly as before
+// until a fresh-seed benchmark says otherwise.
+//
+//   typeAware      scale the pick damage by what KIND of combo is being taken.
+//                  A mixed run spends cards that a same-colour run would pay
+//                  far more for, so it is punished double; a same-colour run
+//                  or a big triple spends them at full value, so it is free.
+//   residualWeight the two cards still on the board after a 3-pick have value
+//                  of their own. Weight > 0 adds their potential to the pick's
+//                  score, preferring picks that leave a live board behind.
+//
+// NB both cost playout time, and the heuristic runs inside every rollout
+// playout — so they must be judged on rate AND latency, not rate alone.
+const DEFAULT_TYPE_AWARE = false;
+const DEFAULT_RESIDUAL_WEIGHT = 0;
+
+// Damage multiplier by combo type. Derived from the scoring table in game.js:
+// a same-colour run pays 50-100, a mixed run of the same three values only
+// 10-60, so the mixed run is the one that wastes the cards.
+function typeMultiplier(cards, score) {
+  const values = cards.map((c) => Number(c.slice(1))).sort((a, b) => a - b);
+  const isRun = values[0] + 1 === values[1] && values[1] + 1 === values[2];
+  if (isRun && cards.every((c) => c[0] === cards[0][0])) return 0;   // same-colour run
+  if (isRun) return 2.0;                                            // mixed run
+  const isTriple = values[0] === values[1] && values[1] === values[2];
+  if (isTriple) return score >= 60 ? 0 : 0.5;
+  return 1;                                                         // no combo
+}
+
 function suggestMoveV2(state, options = {}) {
   const lambda = options.lambda ?? DEFAULT_LAMBDA;
   const endgame = options.endgame ?? true;
+  const typeAware = options.typeAware ?? DEFAULT_TYPE_AWARE;
+  const residualWeight = options.residualWeight ?? DEFAULT_RESIDUAL_WEIGHT;
   const board = state.board;
   const filledIndices = [];
   for (let i = 0; i < board.length; i++) if (board[i]) filledIndices.push(i);
@@ -328,13 +361,34 @@ function suggestMoveV2(state, options = {}) {
       ? cand.slots.map((s) => synergyPotential(board[s], board, available, weights, cand.cards))
       : cand.slots.map((s) => potential[s]);
     const avgPot = altPot.reduce((a, b) => a + b, 0) / 3;
-    const damage = lambda * scale * Math.max(0, avgPot - cand.score);
-    const net = cand.score - damage;
+    const typeMul = typeAware ? typeMultiplier(cand.cards, cand.score) : 1;
+    const damage = lambda * scale * typeMul * Math.max(0, avgPot - cand.score);
+    let net = cand.score - damage;
+    // The cards this pick LEAVES behind. Their potential has to be recomputed
+    // against the deck minus the picked cards — those leave the deck for good,
+    // so scoring the residue against the old available set would credit it with
+    // partners this very pick just consumed.
+    if (residualWeight > 0) {
+      const resSlots = filledIndices.filter((i) => !cand.slots.includes(i));
+      if (resSlots.length === 2) {
+        const resAvailable = new Set(available);
+        for (const s of cand.slots) resAvailable.delete(board[s]);
+        const r0 = potentialOf(board[resSlots[0]], resAvailable);
+        const r1 = potentialOf(board[resSlots[1]], resAvailable);
+        net += residualWeight * scale * (r0 + r1) / 2;
+      }
+    }
     if (net > pickNet) { pickNet = net; pick = cand; pickDamage = damage; }
   }
   if (!pick) {
-    pick = ranked.length ? ranked[0] : null;
-    pickNet = pick ? -Infinity : -Infinity;
+    // Only fall back to a pick that actually SCORES. A zero-score pick spends
+    // three cards for nothing and removes them from the deck for good, and the
+    // UI used to render it as a live suggestion ("Pick R1 · R4 · B2 — no combo
+    // for 0 pts") with an active confirm button. When nothing scores, the
+    // honest answer is "no move", which lets the end-of-run overlay appear.
+    // Reported by Flavius (flaviusrzv/metin2-okey-helper), 2026-09-15.
+    pick = ranked.length && ranked[0].score > 0 ? ranked[0] : null;
+    pickNet = -Infinity;
     pickDamage = 0;
   }
   const pickScore = pick ? pick.score : 0;
@@ -471,7 +525,9 @@ function finalRoundMove(state, board, deck, filledIndices) {
     if (better) best = { stats, move: { slots: [slot], expectedAfter: stats.ev, cost: 0 } };
   }
 
-  if (!best.move) return makePickV2(pick, null, 0);
+  // Same rule in the final round, and null-safe: bestPick() returns null on a
+  // board with fewer than three cards, and makePickV2 would dereference it.
+  if (!best.move) return pick && pick.score > 0 ? makePickV2(pick, null, 0) : null;
   const card = board[best.move.slots[0]];
   const chest = target === CHEST_THRESHOLDS.gold ? "gold" : "silver";
   return {

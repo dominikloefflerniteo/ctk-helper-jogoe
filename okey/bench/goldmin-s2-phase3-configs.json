@@ -1,0 +1,16 @@
+[
+  {
+    "policy": "combo",
+    "objective": "auto",
+    "exactMaxCards": 13,
+    "N": 96,
+    "goldMin": 0.2
+  },
+  {
+    "policy": "combo",
+    "objective": "auto",
+    "exactMaxCards": 13,
+    "N": 96,
+    "goldMin": 0.1
+  }
+]

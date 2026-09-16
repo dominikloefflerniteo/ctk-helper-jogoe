@@ -155,15 +155,84 @@ function phase1Configs() {
   return out;
 }
 
+// Grid for the 2026-09-14 question: m2-helper publishes 10.2% gold / 72.4%
+// silver+ against our 7.3% / 70.6%. Reading their code, the two candidate
+// causes are a gold floor set 5x looser than ours (they gate on 20/200
+// permille, we hardcode 10%) and a playout budget of 240 PIMC samples in
+// Rust/WASM against our 96 in JS.
+//
+// Both knobs move gold and silver in OPPOSITE directions, so they are swept
+// together — iteration 9 already proved that tuning either alone cannot see
+// the trade it is making with the other.
+//
+// objective is "auto" throughout, because goldMin is the auto objective's
+// threshold and does nothing under any other objective.
+function goldMinConfigs() {
+  const out = [];
+  for (const N of [96, 160, 240]) {
+    for (const goldMin of [0.02, 0.04, 0.06, 0.08, 0.10, 0.15, 0.20]) {
+      out.push({ policy: "combo", objective: "auto", exactMaxCards: 13, N, goldMin });
+    }
+  }
+  return out;
+}
+
+// Grid for the 2026-09-15 campaign: everything that is still open AND fits the
+// latency budget, varied together.
+//
+// The budget is the constraint, measured with bench/latency-n.mjs on this
+// machine (p90 per decision, worker thread, provisional answer paints first):
+//
+//   N=96 (shipping)  350 ms      N=160  515 ms
+//   N=240            751 ms      N=320  988 ms
+//
+// N=240 is m2-helper's budget and costs us 2.1x our current p90 — they can
+// afford it because their search is Rust/WASM and ours is JavaScript. It is
+// therefore NOT in this grid: no rate it could buy is worth doubling the lag.
+// N=160 is included as the one affordable step up, to be shipped only if the
+// gain is worth +165 ms.
+//
+// The heuristic axis is Flavius's contribution (typeMul + residual synergy +
+// lambda 10), ported as options in solver.js. It measured +4.3 avg / +1.3pp
+// gold on the v2 HEURISTIC, which is not what ships — the shipping policy is
+// the exact solver plus rollouts, and the heuristic only drives the playouts
+// inside them. Whether the gain survives that is exactly what this measures.
+// Its latency cost is +14 ms p90, i.e. free.
+function affordableConfigs() {
+  const out = [];
+  const HEURISTICS = {
+    base: {},
+    flavius: { base: { lambda: 10, typeAware: true, residualWeight: 1.0 } },
+  };
+  for (const [name, extra] of Object.entries(HEURISTICS)) {
+    for (const N of [96, 160]) {
+      for (const goldMin of [0.02, 0.06, 0.10]) {
+        out.push({
+          policy: "combo", objective: "auto", exactMaxCards: 13,
+          N, goldMin, heuristic: name, ...extra,
+        });
+      }
+    }
+  }
+  return out;
+}
+
 // Phase 2/3 read their configs from a file written by the driver.
 function fileConfigs(name) {
   const p = path.join(OUT_DIR, name);
   return JSON.parse(fs.readFileSync(p, "utf8"));
 }
 
-const configs = PHASE === "1" ? phase1Configs() : fileConfigs(`overnight-phase${PHASE}-configs.json`);
+// --tag keeps a run's results in their own files. Without it a new campaign
+// appends into the previous one's jsonl and the two become indistinguishable.
+const TAG = String(arg("tag", "overnight"));
+const GRID = String(arg("grid", "default"));
+const configs = PHASE !== "1" ? fileConfigs(`${TAG}-phase${PHASE}-configs.json`)
+  : GRID === "goldmin" ? goldMinConfigs()
+  : GRID === "affordable" ? affordableConfigs()
+  : phase1Configs();
 const mine = configs.filter((_, i) => i % OF === SHARD);
-const resultsFile = path.join(OUT_DIR, `overnight-phase${PHASE}-results.jsonl`);
+const resultsFile = path.join(OUT_DIR, `${TAG}-phase${PHASE}-results.jsonl`);
 
 // Time budget: refuse to start a config that probably cannot finish. The first
 // one is measured, then the estimate is the running average per config.
@@ -184,5 +253,5 @@ for (const cfg of mine) {
   console.log(`[shard ${SHARD}] ${JSON.stringify(cfg)} -> silver+ ${(res.pSilverOrBetter * 100).toFixed(1)}% gold ${(res.pGold * 100).toFixed(1)}% avg ${res.mean.toFixed(1)} (${res.seconds}s)`);
 }
 
-fs.writeFileSync(path.join(OUT_DIR, `overnight-phase${PHASE}-shard${SHARD}.done`), String(done));
+fs.writeFileSync(path.join(OUT_DIR, `${TAG}-phase${PHASE}-shard${SHARD}.done`), String(done));
 console.log(`[shard ${SHARD}] finished ${done}/${mine.length} configs`);
