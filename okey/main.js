@@ -142,6 +142,7 @@ function onSlotClick(slotIndex) {
     } else if (suggestionCache.strong && lastSuggestion?.kind === "pick" && matchesSuggestion) {
       const r = confirmPick(state, [...pickedSlots]);
       pickedSlots.clear();
+      clearPendingColor();
       if (r.gained > 0) toast(t("scored", { gained: r.gained, label: handLabel({ ...r, cards: r.hand }) }));
       else toast(t("pickScoresNothing"));
     }
@@ -350,7 +351,9 @@ function refresh() {
 // The key covers everything the engines look at: the field, the score, and how
 // many cards have left the deck.
 function positionKey() {
-  return state.board.join(",") + "|" + state.score + "|" + state.consumed.size;
+  // Include consumed content to avoid key collision
+  // when different cards are eliminated with same board and score.
+  return state.board.join(",") + "|" + state.score + "|" + [...state.consumed].sort().join(",");
 }
 
 // The strong search runs in a worker (search-worker.js) so that making it
