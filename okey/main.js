@@ -67,6 +67,7 @@ let pendingKey = null;
 // Dismissed overlay key — stores positionKey() of the dismissed position.
 // Null when no active dismiss; resets to null on new game.
 let overlayDismissedKey = null;  // key-based dismiss, expires on position change
+let directionBadgeEl    = null;  // direction badge, created/removed each render
 
 const PRACTICE_KEY = "okey-helper.practice.v1";
 function loadPracticeMode() {
@@ -281,8 +282,18 @@ function awaitingCards() {
 // Maps async search state to the suggestion note text.
 function getSuggestionText(waiting, move, isStrong, missing) {
   if (waiting) return t("awaitingCards", { n: missing });
-  if (!isStrong) return t("calculatingSuggestion");
+  if (!isStrong) return move ? adviceText(move) : t("calculatingSuggestion");
   return move ? adviceText(move) : t("noMovesPossible");
+}
+
+function updateDirectionBadge(move, isStrong, waiting) {
+  if (directionBadgeEl) { directionBadgeEl.remove(); directionBadgeEl = null; }
+  if (!move || isStrong || waiting) return;
+  const badge = document.createElement("div");
+  badge.className = "direction-badge direction-" + move.kind;
+  badge.textContent = move.kind === "pick" ? "↓ PICK" : "↑ DISCARD";
+  els.board.parentElement.insertBefore(badge, els.board);
+  directionBadgeEl = badge;
 }
 
 function refresh() {
@@ -298,6 +309,7 @@ function refresh() {
   // pick/discard direction ~40% of the time — showing early causes jarring
   // slot flips when the worker responds with a different recommendation.
   const showHints = suggestionCache.strong;
+  updateDirectionBadge(move, suggestionCache.strong, waiting);
   const suggested = (showHints && move) ? new Set(move.slots) : null;
   const suggestionKind = showHints ? (move ? move.kind : null) : null;
 

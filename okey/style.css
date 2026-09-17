@@ -1036,7 +1036,7 @@ body.chat-hidden .chat-tab-arrow {
   justify-content: center;
   font-family: inherit;
   color: var(--fg);
-  transition: transform 80ms ease, border-color 100ms ease, box-shadow 120ms ease;
+  transition: transform 80ms ease, border-color 100ms ease, box-shadow 200ms ease;
 }
 .slot:hover { transform: translateY(-1px); border-color: var(--fg-dim); }
 
@@ -1656,7 +1656,37 @@ body.minimal-ui .long-form { display: none; }
    full search: dimmed so it reads as provisional rather than final. */
 .suggestion-note.pending {
   opacity: 0.6;
-  transition: opacity 120ms ease;
+  font-style: italic;
+  transition: opacity 160ms ease;
+}
+
+/* Direction badge — shows PICK or DISCARD while the worker computes.
+   Gives the user immediate directional feedback from the instant heuristic.
+   Removed when highlights take over (strong answer arrives). */
+.direction-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  animation: directionFadeIn 120ms ease;
+}
+.direction-pick {
+  background: rgba(242, 201, 76, 0.12);
+  color: var(--accent);
+  border: 1px solid rgba(242, 201, 76, 0.30);
+}
+.direction-discard {
+  background: rgba(235, 87, 87, 0.12);
+  color: var(--danger);
+  border: 1px solid rgba(235, 87, 87, 0.30);
+}
+@keyframes directionFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0);    }
 }
 
 
