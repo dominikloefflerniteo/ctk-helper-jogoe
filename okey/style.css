@@ -772,8 +772,9 @@ body.minimal-ui .help {
   display: none;
 }
 body.minimal-ui .info-panel > .info-block { display: none; }
-body.minimal-ui .info-panel > .info-block:first-child,           /* current card */
-body.minimal-ui .info-panel > .info-block.button-row {           /* undo + reset */
+body.minimal-ui .info-panel > .info-block:first-child,           /* score */
+body.minimal-ui .info-panel > .info-block.button-row,            /* undo + reset + confirm */
+body.minimal-ui .info-panel > .info-block:has(#suggestionNote) { /* suggestion */
   display: block;
 }
 body.minimal-ui .board { max-width: 720px; margin: 0 auto; }
