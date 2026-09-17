@@ -102,6 +102,7 @@ main {
   max-width: 1220px;
   margin: 0 auto;
   width: 100%;
+  transition: grid-template-columns 250ms ease, padding 250ms ease;
 }
 
 .stats-panel {
@@ -782,6 +783,8 @@ body.minimal-ui .info-panel > .info-block:has(#suggestionNote) {
   border-color: rgba(242, 201, 76, 0.45);
   background: rgba(242, 201, 76, 0.04);
 }
+/* Larger suggestion text for readability */
+body.minimal-ui .suggestion-note { font-size: 15px; }
 
 /* Confirm pick — immediately below suggestion */
 body.minimal-ui .info-panel > .info-block:has(#confirmBtn) {
@@ -789,15 +792,18 @@ body.minimal-ui .info-panel > .info-block:has(#confirmBtn) {
   order: 2;
 }
 
-/* Score — compact, verbose details hidden */
+/* Score — inline with chest badge, label hidden */
 body.minimal-ui .info-panel > .info-block:has(#score) {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   order: 3;
 }
+body.minimal-ui .info-panel > .info-block:has(#score) .label { display: none; }
 body.minimal-ui .score-target,
-body.minimal-ui #scoreCeiling,
-body.minimal-ui #chestProjection { display: none; }
-body.minimal-ui .score { font-size: 24px; }
+body.minimal-ui #scoreCeiling { display: none; }
+body.minimal-ui .score { font-size: 22px; }
+body.minimal-ui #chestProjection { margin-top: 0; }
 
 /* Undo / Reset — secondary actions, last */
 body.minimal-ui .info-panel > .info-block:has(#undoBtn) {
@@ -807,7 +813,18 @@ body.minimal-ui .info-panel > .info-block:has(#undoBtn) {
 
 /* Tighter spacing between blocks */
 body.minimal-ui .info-panel { gap: 8px; }
-body.minimal-ui .board { max-width: 720px; margin: 0 auto; }
+
+/* Compact header: hide decorative chrome, keep functional controls */
+body.minimal-ui header { padding: 8px 16px; }
+body.minimal-ui header h1 .subtle,
+body.minimal-ui .discord,
+body.minimal-ui .version,
+body.minimal-ui .page-intro,
+body.minimal-ui .lang-switcher { display: none; }
+
+/* Board fills available width, no hard cap */
+body.minimal-ui .okey-board { max-width: none; }
+body.minimal-ui .board-panel { max-width: 720px; margin: 0 auto; }
 
 /* Twitch chat embed — sits at the bottom of the right info-panel. The iframe
    is owned by Twitch (we can't restyle its internals), so we contain it in a
