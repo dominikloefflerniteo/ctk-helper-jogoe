@@ -1700,6 +1700,18 @@ body.minimal-ui .long-form { display: none; }
   padding-left: 0;
   transition: opacity 180ms ease, padding-left 180ms ease;
 }
+/* Secondary status line — shows "Calculating best move…" below the heuristic
+   answer while the worker computes. Uses content: attr() so it is i18n-aware
+   (data-status is set to t("calculatingSuggestion") in refresh()). */
+.suggestion-note[data-status]:not([data-status=''])::after {
+  content: attr(data-status);
+  display: block;
+  font-size: 11px;
+  color: var(--fg-dim);
+  opacity: 0.65;
+  margin-top: 3px;
+  letter-spacing: 0.2px;
+}
 
 
 /* ---------- waiting for the cards the game dealt ---------- */

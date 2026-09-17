@@ -323,6 +323,9 @@ function refresh() {
 
   const missing = state.board.filter((c) => !c).length;
   els.suggestionNote.textContent = getSuggestionText(waiting, move, suggestionCache.strong, missing);
+  // Show "Calculating..." as a subtitle while the heuristic answer is provisional.
+  els.suggestionNote.dataset.status =
+    (!waiting && !suggestionCache.strong && !!move) ? t("calculatingSuggestion") : "";
   els.suggestionNote.classList.toggle("awaiting", waiting);
   els.suggestionNote.classList.toggle("pending", !waiting && !!move && !suggestionCache.strong);
   els.suggestionNote.classList.toggle("pending-pick",    !waiting && !suggestionCache.strong && !!move && move.kind === "pick");
