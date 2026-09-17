@@ -67,7 +67,7 @@ const DEFAULT_N = 160;
 // Worth knowing before tuning further: at N=96 this heuristic is worth nothing
 // measurable (+0.22pp silver+, z=0.26). It only starts paying once there are
 // enough playouts to carry it, which is why it must never be tuned at low N.
-const DEFAULT_BASE = { lambda: 10, typeAware: true, residualWeight: 1.0 };
+export const DEFAULT_BASE = { lambda: 10, typeAware: true, residualWeight: 1.0 }; // exported for heuristic alignment in policy.js
 
 // Where a rollout stops guessing and starts knowing. Below this many cards in
 // play the exact solver evaluates the position outright, so a playout no
@@ -83,7 +83,7 @@ const DEFAULT_BASE = { lambda: 10, typeAware: true, residualWeight: 1.0 };
 // costs buys more silver when spent on rollouts instead. A good example of why
 // knobs tuned one at a time mislead. Kept switchable for future measurement.
 const DEFAULT_EXACT_LEAF = 0;
-const MAX_PICK_CANDIDATES = 3;
+const MAX_PICK_CANDIDATES = 5; // top-5 picks evaluated (was 3); C(5,3)=10 combos, raw-score top-3 can miss EV-optimal pick
 
 // What "best" means. Chests are worth different amounts to the player, and
 // that changes the play: chasing gold means passing up safe silver.
@@ -228,7 +228,7 @@ function applyMove(state, move) {
 // E[score] comes out of the value curve for free: for a non-negative variable
 // on a 10-point grid, E[X] = 10 * sum over t>=1 of P(X >= t).
 function playout(state, rand, baseOptions, ctx) {
-  let safety = 60;
+  let safety = 60; // Guard against infinite loops; max ~24 actions/game (24 unique cards, picks=3, discards=1)
   while (safety-- > 0) {
     autoFillBoardFromDeck(state, rand);
     const filled = filledCards(state);
@@ -306,13 +306,25 @@ export function suggestMoveRollout(state, options = {}) {
     n: 0,
     sums: { pSilver: 0, pGold: 0, mean: 0 },
     samples: {
-      pSilver: new Float64Array(budget),
-      pGold: new Float64Array(budget),
-      mean: new Float64Array(budget),
-      balanced: new Float64Array(budget),
+      pSilver: new Float64Array(N),   // Start with N (not budget); growSamples() expands lazily
+      pGold: new Float64Array(N),
+      mean: new Float64Array(N),
+      balanced: new Float64Array(N),
     },
     stats: null,
   }));
+
+  // Grow sample arrays lazily when a finalist earns more playouts than its current capacity.
+  // Candidates dropped by halving never exceed N, so they never trigger a realloc.
+  function growSamples(entry, needed) {
+    if (needed <= entry.samples.pSilver.length) return;
+    const next = Math.max(needed, entry.samples.pSilver.length * 2);
+    for (const k of ['pSilver', 'pGold', 'mean', 'balanced']) {
+      const old = entry.samples[k];
+      entry.samples[k] = new Float64Array(next);
+      entry.samples[k].set(old);
+    }
+  }
 
   // Playout i of every candidate uses seed i — that is what makes the
   // comparison paired, and it holds under halving too: two candidates with
@@ -320,6 +332,7 @@ export function suggestMoveRollout(state, options = {}) {
   const seedAt = (i) => (options.seed ?? 0x9E3779B9) + i * 0x85EBCA6B;
 
   const extend = (entry, upTo) => {
+    growSamples(entry, upTo);  // ensure capacity
     for (let i = entry.n; i < upTo; i++) {
       const s = cloneState(state);
       applyMove(s, entry.move);

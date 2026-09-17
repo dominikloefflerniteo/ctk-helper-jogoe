@@ -238,8 +238,14 @@ export class EndgameSolver {
   // GOLD_WEIGHT = 2 (gold counts triple overall, since gold implies silver)
   // is the setting that won the objective benchmark.
   bestMoveChest(available, board, needSilver, needGold, keepMemo = false) {
-    if (!keepMemo) this.solve(available, board);
-    else this.value(available, board);
+    if (!keepMemo) {
+      this.solve(available, board);
+    } else {
+      // Reset node counter — keepMemo reuses the memo table but must not
+      // accumulate nodes across calls; consecutive calls could exceed nodeLimit.
+      this.nodes = 0;
+      this.value(available, board);
+    }
     const NT = this.NT;
     const at = (vec, need, shift) => {
       const src = Math.ceil(need / STEP) - shift;
@@ -306,8 +312,10 @@ export class EndgameSolver {
     return best;
   }
 
-  // Best move for a concrete need (points still required for the target chest).
-  // `keepMemo` reuses the existing table (see prepare()).
+  /**
+   * @deprecated Never called in production — use bestMoveChest() instead.
+   * Single-threshold variant; kept for reference only.
+   */
   bestMove(available, board, need, keepMemo = false) {
     if (!keepMemo) this.solve(available, board);
     else this.value(available, board);

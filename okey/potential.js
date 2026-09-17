@@ -195,6 +195,7 @@ function comboPartners(id, available) {
 // when costing a PICK: the cards of the hand we are about to take obviously
 // all sit on the board, so without the exclusion every pick would look free.
 // What we actually want to know is what those cards could do INSTEAD.
+// Board-aware potential — not active in production (options.synergy defaults to false).
 export function synergyPotential(id, board, available, weights = {}, exclude = null) {
   const lone = weights.lone ?? LONE_WEIGHT;
   const partnerW = weights.partner ?? PARTNER_WEIGHT;

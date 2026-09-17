@@ -8,7 +8,7 @@
 import { deckRemaining, CHEST_THRESHOLDS, scoreHand, BOARD_SIZE } from "./game.js";
 import { EndgameSolver, maskOf } from "./endgame.js";
 import { makeAvailableSet, bestAchievable } from "./potential.js";
-import { suggestMoveRollout } from "./rollout.js";
+import { suggestMoveRollout, DEFAULT_BASE } from "./rollout.js";
 import { suggestMove } from "./solver.js";
 
 export const EXACT_MAX_CARDS = 14;
@@ -145,7 +145,12 @@ export function suggest(state, options = {}) {
   // With < 3 cards there is no hand to score; heuristic handles discard-only.
   if (mode === "auto" && boardCards.length < 3) return suggestMove(state, options);
 
-  if (mode === "heuristic") return suggestMove(state, options);
+  // Use the same base params as the rollout playout policy for consistency.
+  if (mode === "heuristic") return suggestMove(state, {
+    ...DEFAULT_BASE,
+    ...options,
+    mode: undefined,
+  });
   if (mode === "rollout") return suggestMoveRollout(state, options);
 
   if (mode === "exact" || cardsInPlay <= (options.exactMaxCards ?? EXACT_MAX_CARDS)) {

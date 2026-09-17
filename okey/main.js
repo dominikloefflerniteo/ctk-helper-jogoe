@@ -64,9 +64,9 @@ let lastSuggestion = null;
 // Suggestion cache + async upgrade, see computeSuggestion() below.
 let suggestionCache = { key: null, move: null, strong: false };
 let pendingKey = null;
-// Set when the player dismisses the end-of-run overlay: the run is over by
-// the numbers, but they asked to keep going, so stop nagging until reset.
-let overlayDismissed = false;
+// Dismissed overlay key — stores positionKey() of the dismissed position.
+// Null when no active dismiss; resets to null on new game.
+let overlayDismissedKey = null;  // key-based dismiss, expires on position change
 
 const PRACTICE_KEY = "okey-helper.practice.v1";
 function loadPracticeMode() {
@@ -244,7 +244,7 @@ function onReset() {
   pendingKey = null;
   // New game, new deck: the worker's table belongs to the old one too.
   if (searchWorker) searchWorker.postMessage({ type: "reset" });
-  overlayDismissed = false;
+  overlayDismissedKey = null;  // full reset on new game
   hideRunOverlay();
   clearPendingColor();
   refresh();
@@ -294,8 +294,9 @@ function refresh() {
   const waiting = awaitingCards();
   const move = waiting ? null : computeSuggestion();
   lastSuggestion = move;
-  // Highlights only after the worker answers; the heuristic disagrees ~40%
-  // of the time, causing jarring pick/discard flips if shown early.
+  // Highlights only after the worker answers; the heuristic disagrees on
+  // pick/discard direction ~40% of the time — showing early causes jarring
+  // slot flips when the worker responds with a different recommendation.
   const showHints = suggestionCache.strong;
   const suggested = (showHints && move) ? new Set(move.slots) : null;
   const suggestionKind = showHints ? (move ? move.kind : null) : null;
@@ -353,7 +354,7 @@ function refresh() {
 function positionKey() {
   // Include consumed content to avoid key collision
   // when different cards are eliminated with same board and score.
-  return state.board.join(",") + "|" + state.score + "|" + [...state.consumed].sort().join(",");
+  return state.board.join(",") + "|" + state.score + "|" + [...state.consumed].sort().join(",") + "|" + practiceMode;
 }
 
 // The strong search runs in a worker (search-worker.js) so that making it
@@ -377,6 +378,8 @@ function getWorker() {
       pendingKey = null;
       if (msg.type === "error") {
         console.warn("[okey] search failed, keeping the quick answer:", msg.message);
+        // extract outlook from error message if worker computed it before failing.
+        if (msg.outlook) suggestionCache.outlook = msg.outlook;
         // Promote to strong so hints render from the heuristic fallback.
         suggestionCache.strong = true;
         refresh();
@@ -392,6 +395,7 @@ function getWorker() {
       workerBroken = true;
       searchWorker = null;
       pendingKey = null;
+      policyCache = createPolicyCache();  // fresh cache — crashed worker's table is invalid
       // Worker crashed — promote heuristic answer to unblock the UI.
       if (suggestionCache.key === positionKey() && suggestionCache.move) {
         suggestionCache.strong = true;
@@ -435,9 +439,10 @@ function computeSuggestion() {
       setTimeout(() => {
         if (pendingKey !== key) return;      // position moved on meanwhile
         const strong = suggest(state, { cache: policyCache });
+        const outlook = chestOutlook(state, { cache: policyCache });  // compute once here, not in checkRunFinished
         pendingKey = null;
         if (positionKey() !== key) return;   // ditto, after the search
-        suggestionCache = { key, move: strong, strong: true };
+        suggestionCache = { key, move: strong, strong: true, outlook };
         refresh();
       }, 0);
     }
@@ -458,7 +463,7 @@ function hideRunOverlay() {
 }
 
 function checkRunFinished() {
-  if (!els.runOverlay || overlayDismissed) return;
+  if (!els.runOverlay || overlayDismissedKey === positionKey()) return;
   // chestOutlook can trigger the exact solve, which is the one expensive call
   // in here. Only run it on the render that already carries the strong
   // suggestion — that render happens off the click, so nothing blocks a button
@@ -495,7 +500,7 @@ if (els.runOverlayBtn) {
 }
 if (els.runOverlayDismiss) {
   els.runOverlayDismiss.addEventListener("click", () => {
-    overlayDismissed = true;
+    overlayDismissedKey = positionKey();  // expires automatically on next move
     hideRunOverlay();
   });
 }

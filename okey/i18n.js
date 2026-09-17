@@ -281,7 +281,7 @@ const STRINGS = {
     gameOver: (p) => `Runde vorbei — ${p.tier}truhe (${p.score} Punkte)`,
     nothingUndo: "Nichts rückgängig zu machen.",
     addCardsFirst: "Gib zuerst Karten auf dem Feld ein.",
-    discarded: () => `Abgeworfen — gib jetzt die neue Karte aus dem Spiel ein.`,
+    discarded: (p) => `Abgeworfen — gib jetzt die neue Karte aus dem Spiel ein.`,
     tierGold: "Gold", tierSilver: "Silber", tierBronze: "Bronze",
 
     impressumTitle: "Impressum",
@@ -390,7 +390,7 @@ const STRINGS = {
     gameOver: (p) => `Tur bitti — ${p.tier} sandık (${p.score} puan)`,
     nothingUndo: "Geri alınacak bir şey yok.",
     addCardsFirst: "Önce alana kart gir.",
-    discarded: () => `Atıldı — şimdi oyunun verdiği kartı gir.`,
+    discarded: (p) => `Atıldı — şimdi oyunun verdiği kartı gir.`,
     tierGold: "altın", tierSilver: "gümüş", tierBronze: "bronz",
   },
 
@@ -479,7 +479,7 @@ const STRINGS = {
     gameOver: (p) => `Rundă încheiată — cufăr de ${p.tier} (${p.score} puncte)`,
     nothingUndo: "Nimic de anulat.",
     addCardsFirst: "Introdu mai întâi cărți pe teren.",
-    discarded: () => `Aruncată — acum introdu cartea primită de la joc.`,
+    discarded: (p) => `Aruncată — acum introdu cartea primită de la joc.`,
     tierGold: "aur", tierSilver: "argint", tierBronze: "bronz",
   },
 
@@ -568,7 +568,7 @@ const STRINGS = {
     gameOver: (p) => `Ronda terminada — cofre de ${p.tier} (${p.score} puntos)`,
     nothingUndo: "Nada que deshacer.",
     addCardsFirst: "Introduce primero cartas en el campo.",
-    discarded: () => `Descartada — ahora introduce la carta que te dio el juego.`,
+    discarded: (p) => `Descartada — ahora introduce la carta que te dio el juego.`,
     tierGold: "oro", tierSilver: "plata", tierBronze: "bronce",
   },
 
@@ -657,7 +657,7 @@ const STRINGS = {
     gameOver: (p) => `Koniec rundy — ${p.tier} skrzynia (${p.score} punktów)`,
     nothingUndo: "Nie ma czego cofnąć.",
     addCardsFirst: "Najpierw wpisz karty na stole.",
-    discarded: () => `Odrzucone — teraz wpisz kartę, którą dała gra.`,
+    discarded: (p) => `Odrzucone — teraz wpisz kartę, którą dała gra.`,
     tierGold: "złota", tierSilver: "srebrna", tierBronze: "brązowa",
   },
 };
