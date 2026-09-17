@@ -771,12 +771,42 @@ body.minimal-ui .disclaimer,
 body.minimal-ui .help {
   display: none;
 }
+/* Visual order in minimal-ui: suggestion → confirm → score → actions.
+   Uses CSS order: on the existing flex-column .info-panel — no HTML changes. */
 body.minimal-ui .info-panel > .info-block { display: none; }
-body.minimal-ui .info-panel > .info-block:first-child,           /* score */
-body.minimal-ui .info-panel > .info-block.button-row,            /* undo + reset + confirm */
-body.minimal-ui .info-panel > .info-block:has(#suggestionNote) { /* suggestion */
+
+/* Suggestion — highest priority, shown first */
+body.minimal-ui .info-panel > .info-block:has(#suggestionNote) {
   display: block;
+  order: 1;
+  border-color: rgba(242, 201, 76, 0.45);
+  background: rgba(242, 201, 76, 0.04);
 }
+
+/* Confirm pick — immediately below suggestion */
+body.minimal-ui .info-panel > .info-block:has(#confirmBtn) {
+  display: block;
+  order: 2;
+}
+
+/* Score — compact, verbose details hidden */
+body.minimal-ui .info-panel > .info-block:has(#score) {
+  display: block;
+  order: 3;
+}
+body.minimal-ui .score-target,
+body.minimal-ui #scoreCeiling,
+body.minimal-ui #chestProjection { display: none; }
+body.minimal-ui .score { font-size: 24px; }
+
+/* Undo / Reset — secondary actions, last */
+body.minimal-ui .info-panel > .info-block:has(#undoBtn) {
+  display: block;
+  order: 4;
+}
+
+/* Tighter spacing between blocks */
+body.minimal-ui .info-panel { gap: 8px; }
 body.minimal-ui .board { max-width: 720px; margin: 0 auto; }
 
 /* Twitch chat embed — sits at the bottom of the right info-panel. The iframe
