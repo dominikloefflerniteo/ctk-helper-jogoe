@@ -1654,39 +1654,35 @@ body.minimal-ui .long-form { display: none; }
 
 /* Suggestion still being upgraded from the instant heuristic answer to the
    full search: dimmed so it reads as provisional rather than final. */
+/* Pending suggestion — heuristic answer shown immediately while worker computes.
+   Spinner via ::before pseudo-element; no italic — text reads as confident. */
 .suggestion-note.pending {
-  opacity: 0.6;
-  font-style: italic;
-  transition: opacity 160ms ease;
+  opacity: 0.78;
+  padding-left: 20px;
+  position: relative;
+  transition: opacity 180ms ease, padding-left 180ms ease, border-color 180ms ease;
 }
-
-/* Direction badge — shows PICK or DISCARD while the worker computes.
-   Gives the user immediate directional feedback from the instant heuristic.
-   Removed when highlights take over (strong answer arrives). */
-.direction-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  margin-bottom: 6px;
-  animation: directionFadeIn 120ms ease;
+.suggestion-note.pending::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--fg-dim);
+  animation: suggestionSpin 0.7s linear infinite;
 }
-.direction-pick {
-  background: rgba(242, 201, 76, 0.12);
-  color: var(--accent);
-  border: 1px solid rgba(242, 201, 76, 0.30);
+.suggestion-note.pending.pending-pick::before    { border-top-color: var(--accent); }
+.suggestion-note.pending.pending-discard::before { border-top-color: var(--danger); }
+@keyframes suggestionSpin {
+  to { transform: translateY(-50%) rotate(360deg); }
 }
-.direction-discard {
-  background: rgba(235, 87, 87, 0.12);
-  color: var(--danger);
-  border: 1px solid rgba(235, 87, 87, 0.30);
-}
-@keyframes directionFadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0);    }
+.suggestion-note:not(.pending) {
+  padding-left: 0;
+  transition: opacity 180ms ease, padding-left 180ms ease;
 }
 
 

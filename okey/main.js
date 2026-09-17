@@ -67,7 +67,6 @@ let pendingKey = null;
 // Dismissed overlay key — stores positionKey() of the dismissed position.
 // Null when no active dismiss; resets to null on new game.
 let overlayDismissedKey = null;  // key-based dismiss, expires on position change
-let directionBadgeEl    = null;  // direction badge, created/removed each render
 
 const PRACTICE_KEY = "okey-helper.practice.v1";
 function loadPracticeMode() {
@@ -286,16 +285,6 @@ function getSuggestionText(waiting, move, isStrong, missing) {
   return move ? adviceText(move) : t("noMovesPossible");
 }
 
-function updateDirectionBadge(move, isStrong, waiting) {
-  if (directionBadgeEl) { directionBadgeEl.remove(); directionBadgeEl = null; }
-  if (!move || isStrong || waiting) return;
-  const badge = document.createElement("div");
-  badge.className = "direction-badge direction-" + move.kind;
-  badge.textContent = move.kind === "pick" ? "↓ PICK" : "↑ DISCARD";
-  els.board.parentElement.insertBefore(badge, els.board);
-  directionBadgeEl = badge;
-}
-
 function refresh() {
   // Practice mode: any time the board has empty slots and the deck still has
   // cards, auto-draw to keep the field at 5. Single place handles all cases
@@ -309,7 +298,6 @@ function refresh() {
   // pick/discard direction ~40% of the time — showing early causes jarring
   // slot flips when the worker responds with a different recommendation.
   const showHints = suggestionCache.strong;
-  updateDirectionBadge(move, suggestionCache.strong, waiting);
   const suggested = (showHints && move) ? new Set(move.slots) : null;
   const suggestionKind = showHints ? (move ? move.kind : null) : null;
 
@@ -331,6 +319,8 @@ function refresh() {
   els.suggestionNote.textContent = getSuggestionText(waiting, move, suggestionCache.strong, missing);
   els.suggestionNote.classList.toggle("awaiting", waiting);
   els.suggestionNote.classList.toggle("pending", !waiting && !!move && !suggestionCache.strong);
+  els.suggestionNote.classList.toggle("pending-pick",    !waiting && !suggestionCache.strong && !!move && move.kind === "pick");
+  els.suggestionNote.classList.toggle("pending-discard", !waiting && !suggestionCache.strong && !!move && move.kind === "discard");
   document.body.classList.toggle("awaiting-cards", waiting);
   els.acceptSuggestionBtn.disabled = !move || !suggestionCache.strong;
   if (move && move.kind === "discard") {
