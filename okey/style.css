@@ -1138,6 +1138,22 @@ body.chat-hidden .chat-tab-arrow {
   border-style: dashed;
   animation: okeyDiscardPulse 1.4s ease-in-out infinite;
 }
+/* Heuristic slot hints — shown while worker computes (strong=false).
+   Dashed border signals "provisional", matching the .slot-awaiting pattern.
+   No badge, no animation — static and quiet so the final answer feels decisive. */
+.slot-heuristic-pick {
+  border-style: dashed;
+  border-color: rgba(242, 201, 76, 0.50);
+  background:   rgba(242, 201, 76, 0.04);
+  box-shadow:   0 0 6px 2px rgba(242, 201, 76, 0.12);
+}
+.slot-heuristic-discard {
+  border-style: dashed;
+  border-color: rgba(235, 87, 87, 0.45);
+  background:   rgba(235, 87, 87, 0.04);
+  box-shadow:   0 0 6px 2px rgba(235, 87, 87, 0.10);
+}
+
 .slot-suggested-discard:not(.slot-picked)::before {
   content: "DISCARD";
   position: absolute;

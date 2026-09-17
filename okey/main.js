@@ -300,9 +300,15 @@ function refresh() {
   const showHints = suggestionCache.strong;
   const suggested = (showHints && move) ? new Set(move.slots) : null;
   const suggestionKind = showHints ? (move ? move.kind : null) : null;
+  // Heuristic hints — dashed/faded, visible only while worker computes.
+  const showHeuristic = !waiting && !suggestionCache.strong && !!move;
+  const heuristicSuggested = showHeuristic ? new Set(move.slots) : null;
+  const heuristicKind      = showHeuristic ? move.kind : null;
 
   renderBoard(els.board, state, {
-    picked: pickedSlots, suggested, suggestionKind, onSlotClick, awaiting: waiting,
+    picked: pickedSlots, suggested, suggestionKind,
+    heuristicSuggested, heuristicKind,
+    onSlotClick, awaiting: waiting,
   });
   els.board.querySelectorAll(".slot").forEach((slot, i) => {
     slot.addEventListener("contextmenu", (e) => { e.preventDefault(); onSlotRightClick(i); });

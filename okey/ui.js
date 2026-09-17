@@ -7,7 +7,7 @@ import { rankCombos, prettyCard } from "./solver.js";
 
 // ---------- board (5 slots) ----------
 
-export function renderBoard(boardEl, state, { picked, suggested, suggestionKind, onSlotClick, awaiting } = {}) {
+export function renderBoard(boardEl, state, { picked, suggested, suggestionKind, heuristicSuggested, heuristicKind, onSlotClick, awaiting } = {}) {
   boardEl.innerHTML = "";
   for (let i = 0; i < BOARD_SIZE; i++) {
     const slot = document.createElement("button");
@@ -36,6 +36,10 @@ export function renderBoard(boardEl, state, { picked, suggested, suggestionKind,
     // Distinguish pick vs discard suggestion — different colors/badges in CSS.
     if (suggested && suggested.has(i)) {
       slot.classList.add(suggestionKind === "discard" ? "slot-suggested-discard" : "slot-suggested");
+    }
+    // Heuristic hint — dashed/faded while worker computes; disappears on strong answer.
+    if (heuristicSuggested && heuristicSuggested.has(i)) {
+      slot.classList.add(heuristicKind === "discard" ? "slot-heuristic-discard" : "slot-heuristic-pick");
     }
 
     if (onSlotClick) slot.addEventListener("click", () => onSlotClick(i));
