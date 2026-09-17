@@ -819,12 +819,11 @@ body.minimal-ui header { padding: 8px 16px; }
 body.minimal-ui header h1 .subtle,
 body.minimal-ui .discord,
 body.minimal-ui .version,
-body.minimal-ui .page-intro,
-body.minimal-ui .lang-switcher { display: none; }
+body.minimal-ui .page-intro { display: none; }
 
-/* Board fills available width, no hard cap */
-body.minimal-ui .okey-board { max-width: none; }
-body.minimal-ui .board-panel { max-width: 720px; margin: 0 auto; }
+
+/* Hide redundant labels in minimal-ui — board and palette are self-evident */
+body.minimal-ui .board-label { display: none; }
 
 /* Twitch chat embed — sits at the bottom of the right info-panel. The iframe
    is owned by Twitch (we can't restyle its internals), so we contain it in a
