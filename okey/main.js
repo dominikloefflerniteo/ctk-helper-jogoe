@@ -446,8 +446,10 @@ function computeSuggestion() {
       // No worker: the old behaviour, deferred past this paint.
       setTimeout(() => {
         if (pendingKey !== key) return;      // position moved on meanwhile
-        const strong = suggest(state, { cache: policyCache });
-        const outlook = chestOutlook(state, { cache: policyCache });  // compute once here, not in checkRunFinished
+        // Compute outlook first — mirrors the worker path: if suggest() throws
+        // unexpectedly, outlook is still available for checkRunFinished.
+        const outlook = chestOutlook(state, { cache: policyCache });
+        const strong  = suggest(state, { cache: policyCache });
         pendingKey = null;
         if (positionKey() !== key) return;   // ditto, after the search
         suggestionCache = { key, move: strong, strong: true, outlook };
@@ -644,6 +646,7 @@ document.querySelectorAll("[data-open-modal]").forEach((btn) => {
   btn.addEventListener("click", () => {
     const modal = document.getElementById(btn.getAttribute("data-open-modal"));
     if (!modal) return;
+    clearPendingColor();
     modal.hidden = false;
     const card = modal.querySelector(".modal-card");
     if (card) card.focus();
@@ -704,6 +707,7 @@ function clearPendingColor() {
 }
 document.addEventListener("keydown", (e) => {
   if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
+  if (document.querySelector(".modal:not([hidden])")) return;
 
   if (e.key === "Backspace") { e.preventDefault(); onUndo(); return; }
   if (e.key === "Escape")    { onReset(); return; }
