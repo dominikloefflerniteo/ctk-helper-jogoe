@@ -849,25 +849,25 @@ body.minimal-ui .info-panel > .info-block:has(#suggestionNote) {
   background: rgba(242, 201, 76, 0.04);
 }
 /* Larger suggestion text for readability */
-body.minimal-ui .suggestion-note { font-size: 15px; }
-
-/* Confirm pick — immediately below suggestion */
-body.minimal-ui .info-panel > .info-block:has(#confirmBtn) {
-  display: block;
-  order: 2;
-}
+body.minimal-ui .suggestion-note { font-size: 14px; }
 
 /* Score — inline with chest badge, label hidden */
 body.minimal-ui .info-panel > .info-block:has(#score) {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-5);
+  gap: var(--space-3) var(--space-5);
   order: 3;
+}
+/* Score-bar takes full width on its own row in minimal-ui */
+body.minimal-ui .score-bar {
+  flex-basis: 100%;
+  margin: 0;
 }
 body.minimal-ui .info-panel > .info-block:has(#score) .label { display: none; }
 body.minimal-ui .score-target,
 body.minimal-ui #scoreCeiling { display: none; }
-body.minimal-ui .score { font-size: 22px; }
+body.minimal-ui .score { font-size: 26px; }
 body.minimal-ui #chestProjection { margin-top: 0; }
 
 /* Undo / Reset — secondary actions, last */
@@ -878,10 +878,10 @@ body.minimal-ui .info-panel > .info-block:has(#undoBtn) {
 }
 
 /* Tighter spacing between blocks */
-body.minimal-ui .info-panel { gap: 8px; }
+body.minimal-ui .info-panel { gap: var(--space-4); }
 
 /* Compact header: hide decorative chrome, keep functional controls */
-body.minimal-ui header { padding: 8px 16px; }
+body.minimal-ui header { padding: var(--space-4) var(--space-8); }
 body.minimal-ui header h1 .subtle,
 body.minimal-ui .discord,
 body.minimal-ui .version,
