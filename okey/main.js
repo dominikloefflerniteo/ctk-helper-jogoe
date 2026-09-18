@@ -13,6 +13,10 @@ import {
   renderBoard, renderPalette, updateSidebar, updateSessionStats,
 } from "./ui.js";
 
+// Heuristic slot hints toggle — initial state, changed by the UI button.
+const HEURISTIC_HINTS_DEFAULT = true;
+let heuristicHintsEnabled = HEURISTIC_HINTS_DEFAULT;
+
 const els = {
   board: document.getElementById("board"),
   palette: document.getElementById("palette"),
@@ -50,6 +54,7 @@ const els = {
   twitchConsent: document.getElementById("twitchConsent"),
   twitchConsentBtn: document.getElementById("twitchConsentBtn"),
   revokeTwitchConsentBtn: document.getElementById("revokeTwitchConsentBtn"),
+  heuristicHintsBtn: document.getElementById("heuristicHintsBtn"),
 };
 
 // ---------- state ----------
@@ -301,7 +306,7 @@ function refresh() {
   const suggested = (showHints && move) ? new Set(move.slots) : null;
   const suggestionKind = showHints ? (move ? move.kind : null) : null;
   // Heuristic hints — dashed/faded, visible only while worker computes.
-  const showHeuristic = !waiting && !suggestionCache.strong && !!move;
+  const showHeuristic = heuristicHintsEnabled && !waiting && !suggestionCache.strong && !!move;
   const heuristicSuggested = showHeuristic ? new Set(move.slots) : null;
   const heuristicKind      = showHeuristic ? move.kind : null;
 
@@ -749,6 +754,13 @@ function bindToggles() {
     els.minimalUiBtn.addEventListener("click", () => {
       document.body.classList.toggle("minimal-ui");
       els.minimalUiBtn.classList.toggle("off", !document.body.classList.contains("minimal-ui"));
+    });
+  }
+  if (els.heuristicHintsBtn) {
+    els.heuristicHintsBtn.addEventListener("click", () => {
+      heuristicHintsEnabled = !heuristicHintsEnabled;
+      els.heuristicHintsBtn.classList.toggle("off", !heuristicHintsEnabled);
+      refresh();
     });
   }
 }

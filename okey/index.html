@@ -43,6 +43,10 @@
             <span class="icon-on">▦</span><span class="icon-off">□</span>
           </button>
         </div>
+		<button id="heuristicHintsBtn" class="icon-toggle" type="button"
+				aria-label="Toggle slot hints" title="Toggle heuristic slot hints">
+		  <span class="icon-on">◈</span><span class="icon-off">◇</span>
+		</button>
       </div>
       <span class="discord">discord: @jogoe</span>
       <span class="version">okey · v0.3<span class="version-views" id="versionViews"></span></span>
@@ -95,15 +99,15 @@
           </li>
           <li class="session-row">
             <span class="session-name chest-gold" data-i18n="gold">Gold</span>
-            <span><span id="sessionGold">0</span> <span id="sessionPctGold" class="session-pct"></span></span>
+            <span><span id="sessionGold">0</span>&nbsp;<span id="sessionPctGold" class="session-pct"></span></span>
           </li>
           <li class="session-row">
             <span class="session-name chest-silver" data-i18n="silver">Silver</span>
-            <span><span id="sessionSilver">0</span> <span id="sessionPctSilver" class="session-pct"></span></span>
+            <span><span id="sessionSilver">0</span>&nbsp;<span id="sessionPctSilver" class="session-pct"></span></span>
           </li>
           <li class="session-row">
             <span class="session-name chest-bronze" data-i18n="bronze">Bronze</span>
-            <span><span id="sessionBronze">0</span> <span id="sessionPctBronze" class="session-pct"></span></span>
+            <span><span id="sessionBronze">0</span>&nbsp;<span id="sessionPctBronze" class="session-pct"></span></span>
           </li>
         </ul>
         <button id="sessionResetBtn" class="action-btn session-reset" type="button" data-i18n="reset">Reset</button>
@@ -118,15 +122,15 @@
           </li>
           <li class="session-row">
             <span class="session-name chest-gold" data-i18n="gold">Gold</span>
-            <span><span id="globalGold">…</span> <span id="globalPctGold" class="session-pct"></span></span>
+            <span><span id="globalGold">…</span>&nbsp;<span id="globalPctGold" class="session-pct"></span></span>
           </li>
           <li class="session-row">
             <span class="session-name chest-silver" data-i18n="silver">Silver</span>
-            <span><span id="globalSilver">…</span> <span id="globalPctSilver" class="session-pct"></span></span>
+            <span><span id="globalSilver">…</span>&nbsp;<span id="globalPctSilver" class="session-pct"></span></span>
           </li>
           <li class="session-row">
             <span class="session-name chest-bronze" data-i18n="bronze">Bronze</span>
-            <span><span id="globalBronze">…</span> <span id="globalPctBronze" class="session-pct"></span></span>
+            <span><span id="globalBronze">…</span>&nbsp;<span id="globalPctBronze" class="session-pct"></span></span>
           </li>
         </ul>
         <div class="chest-note" data-i18n="globalNote"></div>
@@ -168,15 +172,17 @@
     </section>
 
     <aside class="info-panel">
-      <div class="info-block button-row">
-        <button id="confirmBtn" class="action-btn confirm-btn" type="button" disabled data-i18n="confirmPick">Confirm pick</button>
+      <!-- Suggestion block: heuristic answer + both action buttons -->
+      <div class="info-block suggestion-block">
+        <div class="label" data-i18n="suggestion">Suggestion</div>
+        <div id="suggestionNote" class="suggestion-note">—</div>
+        <div class="suggestion-actions">
+          <button id="acceptSuggestionBtn" class="action-btn" type="button" disabled data-i18n="useSuggestion">Use suggestion</button>
+          <button id="confirmBtn" class="action-btn confirm-btn" type="button" disabled data-i18n="confirmPick">Confirm pick</button>
+        </div>
       </div>
 
-      <div class="info-block button-row">
-        <button id="undoBtn" class="action-btn" type="button" disabled data-i18n="undo">Undo</button>
-        <button id="resetBtn" class="reset-btn" type="button" data-i18n="reset">Reset</button>
-      </div>
-
+      <!-- Score: compact with chest and ceiling context -->
       <div class="info-block">
         <div class="label" data-i18n="scoreLabel">Score</div>
         <div id="score" class="score">0</div>
@@ -185,16 +191,17 @@
         <div id="chestProjection" class="chest-projection"></div>
       </div>
 
+      <!-- Secondary actions -->
+      <div class="info-block button-row">
+        <button id="undoBtn" class="action-btn" type="button" disabled data-i18n="undo">Undo</button>
+        <button id="resetBtn" class="reset-btn" type="button" data-i18n="reset">Reset</button>
+      </div>
+
+      <!-- Pick status (hidden in normal UI, optional in minimal) -->
       <div class="info-block">
         <div class="label" data-i18n="yourPick">Your pick</div>
         <div id="pickTotal" class="pick-total">0/3</div>
         <div id="pickLabel" class="pick-label" data-i18n="pickHint">Click cards on the field to pick.</div>
-      </div>
-
-      <div class="info-block">
-        <div class="label" data-i18n="suggestion">Suggestion</div>
-        <div id="suggestionNote" class="suggestion-note">—</div>
-        <button id="acceptSuggestionBtn" class="action-btn" type="button" disabled data-i18n="useSuggestion">Use suggestion</button>
       </div>
 
       <div class="promo-text" data-i18n-html="supportText"></div>
