@@ -43,10 +43,6 @@
             <span class="icon-on">▦</span><span class="icon-off">□</span>
           </button>
         </div>
-		<button id="heuristicHintsBtn" class="icon-toggle" type="button"
-				aria-label="Toggle slot hints" title="Toggle heuristic slot hints">
-		  <span class="icon-on">◈</span><span class="icon-off">◇</span>
-		</button>
       </div>
       <span class="discord">discord: @jogoe</span>
       <span class="version">okey · v0.3<span class="version-views" id="versionViews"></span></span>
@@ -174,7 +170,13 @@
     <aside class="info-panel">
       <!-- Suggestion block: heuristic answer + both action buttons -->
       <div class="info-block suggestion-block">
-        <div class="label" data-i18n="suggestion">Suggestion</div>
+        <div class="suggestion-header">
+          <div class="label" data-i18n="suggestion">Suggestion</div>
+          <button id="heuristicHintsBtn" class="icon-toggle hint-toggle" type="button"
+                  aria-label="Toggle slot hints" title="Toggle heuristic slot hints">
+            <span class="icon-on">◈</span><span class="icon-off">◇</span>
+          </button>
+        </div>
         <div id="suggestionNote" class="suggestion-note">—</div>
         <div class="suggestion-actions">
           <button id="acceptSuggestionBtn" class="action-btn" type="button" disabled data-i18n="useSuggestion">Use suggestion</button>

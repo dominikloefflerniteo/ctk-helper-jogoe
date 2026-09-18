@@ -551,6 +551,24 @@ kbd {
 /* Suggestion block — groups the hint text with both action buttons */
 .suggestion-block { }
 
+/* Suggestion block header */
+.suggestion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0;
+}
+.suggestion-header .label {
+  margin-bottom: 0;
+}
+.hint-toggle {
+  height: 20px;
+  min-width: 24px;
+  padding: 0 5px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
 /* Two action buttons side by side */
 .suggestion-actions {
   display: flex;
@@ -820,7 +838,8 @@ body.minimal-ui #chestProjection { margin-top: 0; }
 
 /* Undo / Reset — secondary actions, last */
 body.minimal-ui .info-panel > .info-block:has(#undoBtn) {
-  display: block;
+  display: flex;
+  gap: 8px;
   order: 4;
 }
 
