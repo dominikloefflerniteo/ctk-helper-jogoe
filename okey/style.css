@@ -545,6 +545,19 @@ kbd {
   font-size: 13px;
   color: var(--fg);
   line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+/* Suggestion block — groups the hint text with both action buttons */
+.suggestion-block { }
+
+/* Two action buttons side by side */
+.suggestion-actions {
+  display: flex;
+  gap: 8px;
+}
+.suggestion-actions .action-btn {
+  flex: 1;
 }
 
 .suggestion-label {
