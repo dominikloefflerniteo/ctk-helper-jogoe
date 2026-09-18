@@ -572,8 +572,11 @@ kbd {
   margin-bottom: var(--space-5);
 }
 
-/* Suggestion block — groups the hint text with both action buttons */
-.suggestion-block { }
+/* Suggestion block — primary action block, subtle gold identity in full UI */
+.suggestion-block {
+  border-color: rgba(242, 201, 76, 0.25);
+  background: rgba(242, 201, 76, 0.02);
+}
 
 /* Suggestion block header */
 .suggestion-header {
@@ -588,7 +591,7 @@ kbd {
 .hint-toggle {
   height: 20px;
   min-width: 24px;
-  padding: 0 5px;
+  padding: 0 var(--space-3);
   font-size: 13px;
   flex-shrink: 0;
 }
@@ -850,6 +853,7 @@ body.minimal-ui .info-panel > .info-block:has(#suggestionNote) {
 }
 /* Larger suggestion text for readability */
 body.minimal-ui .suggestion-note { font-size: 14px; }
+body.minimal-ui .suggestion-note[data-status]:not([data-status=""])::after { font-size: 12px; }
 
 /* Score — inline with chest badge, label hidden */
 body.minimal-ui .info-panel > .info-block:has(#score) {
@@ -879,6 +883,16 @@ body.minimal-ui .info-panel > .info-block:has(#undoBtn) {
 
 /* Tighter spacing between blocks */
 body.minimal-ui .info-panel { gap: var(--space-4); }
+
+/* Suggestion action buttons: constrain width in minimal so they stay compact */
+body.minimal-ui .suggestion-actions {
+  flex-wrap: wrap;
+}
+body.minimal-ui .suggestion-actions .action-btn {
+  flex: 1 1 auto;
+  min-width: 120px;
+  max-width: 260px;
+}
 
 /* Compact header: hide decorative chrome, keep functional controls */
 body.minimal-ui header { padding: var(--space-4) var(--space-8); }
