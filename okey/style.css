@@ -1215,6 +1215,9 @@ body.chat-hidden .chat-tab-arrow {
   font-weight: 700;
   color: var(--fg-dim);
   opacity: 0.4;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* Card body for filled slots and palette buttons. The corner pips + center
@@ -1243,6 +1246,9 @@ body.chat-hidden .chat-tab-arrow {
   font-size: 14px;
   font-weight: 700;
   line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .card-corner.top-left { top: 6px; left: 8px; }
 .card-corner.bottom-right { bottom: 6px; right: 8px; transform: rotate(180deg); }
@@ -1250,6 +1256,9 @@ body.chat-hidden .chat-tab-arrow {
   font-size: 36px;
   font-weight: 800;
   letter-spacing: -1px;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .slot-picked {
