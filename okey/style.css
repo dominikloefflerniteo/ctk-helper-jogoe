@@ -1116,7 +1116,11 @@ body.chat-hidden .chat-tab-arrow {
 .modal-close:hover { background: var(--bg-3); color: var(--fg); }
 
 /* ── Focus rings (keyboard accessibility) ── */
-.slot:focus-visible,
+.slot:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-lg);
+}
 .palette-card:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -1546,6 +1550,18 @@ body.practice-on .okey-palette {
   background: rgba(255,255,255,0.25);
 }
 .score-bar-mark.silver-mark { left: 75%; }
+.score-bar-mark.silver-mark::after {
+  content: '300';
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--fg-dim);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  white-space: nowrap;
+  pointer-events: none;
+}
 
 
 /* ---------- combo list ---------- */
@@ -1966,7 +1982,7 @@ body.awaiting-cards .okey-palette {
   cursor: pointer;
   margin-left: var(--space-4);
   font-size: 16px;
-  padding: 0 var(--space-1);
+  padding: var(--space-3) var(--space-4);
   line-height: 1;
   opacity: 0.7;
   flex-shrink: 0;

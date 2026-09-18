@@ -240,6 +240,10 @@ function onReset() {
     recordGlobalCompletion(tier);
     toast(t("gameOver", { tier: t("tier" + tier[0].toUpperCase() + tier.slice(1)), score: finalScore }));
   }
+  clearTimeout(sessionResetTimer);
+  sessionResetPending = false;
+  els.sessionResetBtn.textContent = t("reset");
+  els.sessionResetBtn.classList.remove("confirm-pending");
   resetState(state);
   pickedSlots.clear();
   // New game, new deck: the exact solver's table belongs to the old one.
@@ -365,7 +369,7 @@ function refresh() {
   } else if (pickedSlots.size === HAND_SIZE) {
     const selCards = [...pickedSlots].map((i) => state.board[i]);
     const { score: selScore } = scoreHand(selCards);
-    els.confirmBtn.textContent = selScore > 0 ? `${selScore} pts` : t("confirmPick");
+    els.confirmBtn.textContent = selScore > 0 ? `${selScore} pts` : `— pts`;
   } else {
     els.confirmBtn.textContent = t("confirmPick");
   }
@@ -518,7 +522,9 @@ function checkRunFinished() {
   // "strong" and drag the exact solve back into the click path.
   if (!suggestionCache.strong || suggestionCache.key !== positionKey()) return;
   // Nothing to announce before the run has actually started.
-  if (state.log.length === 0) { hideRunOverlay(); return; }
+  if (state.log.length === 0 && suggestionCache.outlook?.canImprove !== false) {
+    hideRunOverlay(); return;
+  }
 
   // Prefer the outlook the worker already computed for this exact position —
   // recomputing it here would put the one remaining expensive call back on the
@@ -765,7 +771,7 @@ document.addEventListener("keydown", (e) => {
   const k = e.key.toUpperCase();
   if (k === "R" || k === "B" || k === "Y") { setPendingColor(k); return; }
   if (pendingColor && /^[1-8]$/.test(e.key)) {
-    onPaletteClick(`${pendingColor}${e.key}`);
+    if (!practiceMode) onPaletteClick(`${pendingColor}${e.key}`);
     clearPendingColor();
   }
 });
