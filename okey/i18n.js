@@ -47,6 +47,7 @@ const STRINGS = {
     gold: "Gold", silver: "Silver", bronze: "Bronze",
 
     session: "Session", games: "Games", avgScore: "Avg score", reset: "Reset",
+    sessionResetConfirm: "Sure? Click again",
     globalAllTime: "Everyone, all time",
     globalNote: "Counted when a run is reset. Public counters, no accounts.",
 
@@ -196,6 +197,7 @@ const STRINGS = {
     gold: "Gold", silver: "Silber", bronze: "Bronze",
 
     session: "Sitzung", games: "Runden", avgScore: "Ø Punkte", reset: "Zurücksetzen",
+    sessionResetConfirm: "Sicher? Nochmal klicken",
     globalAllTime: "Alle, seit jeher",
     globalNote: "Wird beim Zurücksetzen gezählt. Öffentliche Zähler, keine Konten.",
 
@@ -341,6 +343,7 @@ const STRINGS = {
     col678: "Sadece 6-7-8",
     gold: "Altın", silver: "Gümüş", bronze: "Bronz",
     session: "Oturum", games: "Tur", avgScore: "Ort. puan", reset: "Sıfırla",
+    sessionResetConfirm: "Emin misin? Tekrar tıkla",
     globalAllTime: "Herkes, tüm zamanlar",
     globalNote: "Tur sıfırlanınca sayılır. Herkese açık sayaçlar, hesap yok.",
     scoreLabel: "Puan", scoreTarget: "hedef 400 (altın)",
@@ -430,6 +433,7 @@ const STRINGS = {
     col678: "Doar 6-7-8",
     gold: "Aur", silver: "Argint", bronze: "Bronz",
     session: "Sesiune", games: "Runde", avgScore: "Punctaj mediu", reset: "Resetează",
+    sessionResetConfirm: "Sigur? Apasă din nou",
     globalAllTime: "Toți, din totdeauna",
     globalNote: "Se numără la resetarea rundei. Contoare publice, fără conturi.",
     scoreLabel: "Punctaj", scoreTarget: "țintă 400 (aur)",
@@ -519,6 +523,7 @@ const STRINGS = {
     col678: "Solo 6-7-8",
     gold: "Oro", silver: "Plata", bronze: "Bronce",
     session: "Sesión", games: "Rondas", avgScore: "Puntos medios", reset: "Reiniciar",
+    sessionResetConfirm: "¿Seguro? Haz clic de nuevo",
     globalAllTime: "Todos, desde siempre",
     globalNote: "Se cuenta al reiniciar la ronda. Contadores públicos, sin cuentas.",
     scoreLabel: "Puntos", scoreTarget: "objetivo 400 (oro)",
@@ -608,6 +613,7 @@ const STRINGS = {
     col678: "Tylko 6-7-8",
     gold: "Złota", silver: "Srebrna", bronze: "Brązowa",
     session: "Sesja", games: "Rundy", avgScore: "Śr. punkty", reset: "Reset",
+    sessionResetConfirm: "Na pewno? Kliknij ponownie",
     globalAllTime: "Wszyscy, od zawsze",
     globalNote: "Liczone przy resecie rundy. Publiczne liczniki, bez kont.",
     scoreLabel: "Punkty", scoreTarget: "cel 400 (złota)",

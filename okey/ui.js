@@ -7,7 +7,7 @@ import { rankCombos, prettyCard } from "./solver.js";
 
 // ---------- board (5 slots) ----------
 
-export function renderBoard(boardEl, state, { picked, suggested, suggestionKind, heuristicSuggested, heuristicKind, onSlotClick, awaiting } = {}) {
+export function renderBoard(boardEl, state, { picked, suggested, suggestionKind, heuristicSuggested, heuristicKind, onSlotClick, onSlotRightClick, awaiting } = {}) {
   boardEl.innerHTML = "";
   for (let i = 0; i < BOARD_SIZE; i++) {
     const slot = document.createElement("button");
@@ -43,6 +43,7 @@ export function renderBoard(boardEl, state, { picked, suggested, suggestionKind,
     }
 
     if (onSlotClick) slot.addEventListener("click", () => onSlotClick(i));
+    if (onSlotRightClick) slot.addEventListener("contextmenu", (e) => { e.preventDefault(); onSlotRightClick(i); });
     boardEl.appendChild(slot);
   }
 }
@@ -117,8 +118,18 @@ export function updateSidebar(els, state, { picked } = {}) {
 
   // Chest "where you'd land if you stopped now" — fixed by current score only.
   const tier = chestForScore(state.score);
-  els.chestProjection.textContent = chestProjLabel(tier, state.score);
-  els.chestProjection.className = `chest-projection chest-${tier}`;
+  const proj = chestProjLabel(tier, state.score);
+  els.chestProjection.textContent = proj.label;
+  els.chestProjection.className = `chest-projection chest-${proj.cls}`;
+  // Score progress bar
+  const barFill = document.getElementById("scoreBarFill");
+  if (barFill) {
+    const pct = Math.min(state.score / 400, 1) * 100;
+    barFill.style.width = pct + "%";
+    barFill.style.background =
+      state.score >= 400 ? "var(--accent)" :
+      state.score >= 300 ? "var(--v2)" : "var(--v3)";
+  }
 
   // Current pick total (mid-selection feedback)
   if (picked && picked.size === HAND_SIZE) {
@@ -140,12 +151,10 @@ function bestScoreOnBoard(board) {
 }
 
 function chestProjLabel(tier, score) {
-  switch (tier) {
-    case "gold":   return `Gold (${score} ≥ 400)`;
-    case "silver": return `Silver (${score})`;
-    case "bronze":
-    default:       return `Bronze (${score})`;
-  }
+  if (tier === "gold")    return { cls: "gold",          label: `Gold (${score} ≥ 400)` };
+  if (score >= 300)      return { cls: "silver-locked", label: `Silver locked (${score})` };
+  if (tier === "silver") return { cls: "silver",        label: `Silver (${score})` };
+  return                        { cls: "bronze",         label: `Bronze (${score})` };
 }
 
 function scoreThreeFromCards(cards) {

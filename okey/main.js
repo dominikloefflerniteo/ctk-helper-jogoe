@@ -41,6 +41,8 @@ const els = {
   sessionAvg: document.getElementById("sessionAvg"),
   sessionResetBtn: document.getElementById("sessionResetBtn"),
   toast: document.getElementById("toast"),
+  toastMsg: document.getElementById("toastMsg"),
+  toastClose: document.getElementById("toastClose"),
   twitchChatMount: document.getElementById("twitchChatMount"),
   chatBtn: document.getElementById("chatBtn"),
   minimalUiBtn: document.getElementById("minimalUiBtn"),
@@ -255,20 +257,40 @@ function onReset() {
   refresh();
 }
 
+let sessionResetPending = false;
+let sessionResetTimer = 0;
 function onSessionReset() {
+  if (!sessionResetPending) {
+    sessionResetPending = true;
+    els.sessionResetBtn.textContent = t("sessionResetConfirm");
+    els.sessionResetBtn.classList.add("confirm-pending");
+    sessionResetTimer = setTimeout(() => {
+      sessionResetPending = false;
+      els.sessionResetBtn.textContent = t("reset");
+      els.sessionResetBtn.classList.remove("confirm-pending");
+    }, 3000);
+    return;
+  }
+  clearTimeout(sessionResetTimer);
+  sessionResetPending = false;
   session = emptySession();
   saveSession();
   updateSessionStats(els, session);
+  els.sessionResetBtn.textContent = t("reset");
+  els.sessionResetBtn.classList.remove("confirm-pending");
 }
 
 // ---------- toast ----------
+const TOAST_MIN_MS = 1800;
+const TOAST_MS_PER_CHAR = 55;
 let toastTimer = 0;
 function toast(msg) {
-  if (!els.toast) return;
-  els.toast.textContent = msg;
+  if (!els.toast || !els.toastMsg) return;
+  els.toastMsg.textContent = msg;
   els.toast.classList.add("toast-show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => els.toast.classList.remove("toast-show"), 1800);
+  const dur = Math.max(TOAST_MIN_MS, msg.length * TOAST_MS_PER_CHAR);
+  toastTimer = setTimeout(() => els.toast.classList.remove("toast-show"), dur);
 }
 
 // ---------- refresh ----------
@@ -313,11 +335,9 @@ function refresh() {
   renderBoard(els.board, state, {
     picked: pickedSlots, suggested, suggestionKind,
     heuristicSuggested, heuristicKind,
-    onSlotClick, awaiting: waiting,
+    onSlotClick, onSlotRightClick, awaiting: waiting,
   });
-  els.board.querySelectorAll(".slot").forEach((slot, i) => {
-    slot.addEventListener("contextmenu", (e) => { e.preventDefault(); onSlotRightClick(i); });
-  });
+
 
   renderPalette(els.palette, {
     onPaletteClick: practiceMode ? null : onPaletteClick,
@@ -549,13 +569,24 @@ const NS = "okey-helper-jogoe";
 const GLOBAL_KEYS = ["games", "gold", "silver", "bronze"];
 const globalCounts = { games: null, gold: null, silver: null, bronze: null };
 
+function setAnimated(id, v) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const next = String(v);
+  if (el.textContent === next) return;
+  el.style.opacity = "0";
+  requestAnimationFrame(() => {
+    el.textContent = next;
+    requestAnimationFrame(() => { el.style.opacity = "1"; });
+  });
+}
 function renderGlobalStats() {
   const fmt = (v) => (v == null ? "…" : v.toLocaleString());
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-  set("globalGames", fmt(globalCounts.games));
-  set("globalGold", fmt(globalCounts.gold));
-  set("globalSilver", fmt(globalCounts.silver));
-  set("globalBronze", fmt(globalCounts.bronze));
+  setAnimated("globalGames", fmt(globalCounts.games));
+  setAnimated("globalGold", fmt(globalCounts.gold));
+  setAnimated("globalSilver", fmt(globalCounts.silver));
+  setAnimated("globalBronze", fmt(globalCounts.bronze));
   const pct = (n) => (globalCounts.games && n != null ? `(${Math.round((n / globalCounts.games) * 100)}%)` : "");
   set("globalPctGold", pct(globalCounts.gold));
   set("globalPctSilver", pct(globalCounts.silver));
@@ -708,10 +739,13 @@ function setPendingColor(k) {
   pendingColor = k;
   clearTimeout(pendingColorTimer);
   pendingColorTimer = setTimeout(() => { pendingColor = null; }, PENDING_COLOR_TIMEOUT);
+  document.querySelectorAll(".palette-row").forEach((r) => r.classList.remove("pending-color-active"));
+  document.querySelector(`.palette-row[data-color="${k}"]`)?.classList.add("pending-color-active");
 }
 function clearPendingColor() {
   pendingColor = null;
   clearTimeout(pendingColorTimer);
+  document.querySelectorAll(".palette-row").forEach((r) => r.classList.remove("pending-color-active"));
 }
 document.addEventListener("keydown", (e) => {
   if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
@@ -814,5 +848,9 @@ if (els.revokeTwitchConsentBtn) {
 }
 if (twitchConsented()) loadTwitchChat();
 
+els.toastClose?.addEventListener("click", () => {
+  clearTimeout(toastTimer);
+  els.toast.classList.remove("toast-show");
+});
 updateSessionStats(els, session);
 refresh();

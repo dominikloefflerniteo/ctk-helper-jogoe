@@ -40,7 +40,7 @@
         </label>
         <div class="header-toggles" role="group" aria-label="Toggles">
           <button id="minimalUiBtn" class="icon-toggle" type="button" aria-label="Toggle minimal UI" data-i18n-title="minimalUi">
-            <span class="icon-on">▦</span><span class="icon-off">□</span>
+            <span class="icon-on" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg></span><span class="icon-off" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="1.75" width="12.5" height="12.5" rx="1.5"/></svg></span>
           </button>
         </div>
       </div>
@@ -174,7 +174,7 @@
           <div class="label" data-i18n="suggestion">Suggestion</div>
           <button id="heuristicHintsBtn" class="icon-toggle hint-toggle" type="button"
                   aria-label="Toggle slot hints" title="Toggle heuristic slot hints">
-            <span class="icon-on">◈</span><span class="icon-off">◇</span>
+            <span class="icon-on" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L15 8L8 15L1 8Z"/><circle cx="8" cy="8" r="2.5" fill="var(--bg-2)"/></svg></span><span class="icon-off" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1.5L14.5 8L8 14.5L1.5 8Z"/></svg></span>
           </button>
         </div>
         <div id="suggestionNote" class="suggestion-note">—</div>
@@ -191,6 +191,10 @@
         <div class="score-target" data-i18n="scoreTarget">target 400 (gold)</div>
         <div id="scoreCeiling" class="score-ceiling"></div>
         <div id="chestProjection" class="chest-projection"></div>
+      <div class="score-bar" aria-hidden="true">
+        <div id="scoreBarFill" class="score-bar-fill"></div>
+        <div class="score-bar-mark silver-mark" title="Silver: 300 pts"></div>
+      </div>
       </div>
 
       <!-- Secondary actions -->
@@ -375,7 +379,10 @@
     </div>
   </div>
 
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite">
+  <span id="toastMsg"></span>
+  <button id="toastClose" class="toast-close" aria-label="Dismiss">&#215;</button>
+</div>
 
   <script type="module" src="main.js"></script>
 </body>
