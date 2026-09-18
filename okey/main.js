@@ -168,6 +168,7 @@ function onSlotRightClick(slotIndex) {
     toast(t("deckEmptyNoThrow"));
     return;
   }
+  if (navigator.vibrate) navigator.vibrate(50); // haptic feedback on mobile
   pickedSlots.delete(slotIndex);
   discardSlot(state, slotIndex);
   refresh();

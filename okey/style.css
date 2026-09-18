@@ -681,6 +681,7 @@ kbd {
 
 footer {
   padding: var(--space-6) var(--space-12);
+  padding-bottom: max(var(--space-6), env(safe-area-inset-bottom));
   border-top: 1px solid var(--border);
   font-size: 12px;
   text-align: center;
@@ -1207,6 +1208,7 @@ body.chat-hidden .chat-tab-arrow {
   touch-action: manipulation;
   -webkit-touch-callout: none;
   user-select: none;
+  -webkit-user-select: none;
 }
 .slot:hover { transform: translateY(-1px); border-color: var(--fg-dim); }
 
@@ -1480,6 +1482,9 @@ body.practice-on .okey-palette {
   font-weight: 700;
   color: var(--fg);
   transition: transform 80ms ease, border-color 100ms ease, background 100ms ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 .palette-card:hover:not(.used) {
   transform: translateY(-1px);
