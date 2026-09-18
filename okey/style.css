@@ -542,7 +542,6 @@ kbd {
   pointer-events: none;
   transition: opacity 180ms ease, transform 180ms ease;
   z-index: 1000;
-  max-width: 90vw;
 }
 .toast.toast-show {
   opacity: 1;
@@ -906,30 +905,6 @@ body.minimal-ui .suggestion-actions .action-btn {
 }
 
 
-/* ── Pick counter in minimal-ui: show existing block, strip chrome ── */
-body.minimal-ui .info-panel > .info-block:has(#pickTotal) {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  order: 2;
-  padding: var(--space-3) var(--space-8);
-  background: transparent;
-  border-color: transparent;
-}
-body.minimal-ui .info-panel > .info-block:has(#pickTotal) .label,
-body.minimal-ui .pick-label {
-  display: none;
-}
-body.minimal-ui .pick-total {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--fg-dim);
-  line-height: 1;
-}
-/* When 3 cards selected: pick-total shows score → highlight it */
-body.minimal-ui .info-panel > .info-block:has(#pickTotal):not(:has(#pickTotal:empty)) .pick-total {
-  color: var(--fg);
-}
 /* Compact header: hide decorative chrome, keep functional controls */
 body.minimal-ui header { padding: var(--space-4) var(--space-8); }
 body.minimal-ui header h1 .subtle,
@@ -1528,17 +1503,6 @@ body.practice-on .okey-palette {
   color: var(--fg-dim);
 }
 
-.pick-total {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--fg);
-}
-.pick-label {
-  font-size: 12px;
-  color: var(--fg-dim);
-  margin-top: var(--space-2);
-}
-
 .chest-projection {
   margin-top: var(--space-4);
   font-size: 12px;
@@ -1725,6 +1689,8 @@ body.practice-on .okey-palette {
   background: var(--bg-3);
   color: var(--fg-dim);
   border-color: var(--border);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
 }
 
 

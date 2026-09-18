@@ -126,20 +126,8 @@ export function updateSidebar(els, state, { picked } = {}) {
   if (barFill) {
     const pct = Math.min(state.score / 400, 1) * 100;
     barFill.style.width = pct + "%";
-    const tier = state.score >= 400 ? "gold" : state.score >= 300 ? "silver" : "bronze";
-    barFill.className = "score-bar-fill tier-" + tier;
-  }
-
-  // Current pick total (mid-selection feedback)
-  if (picked && picked.size === HAND_SIZE) {
-    const cards = [...picked].map((i) => state.board[i]);
-    const r = scoreThreeFromCards(cards);
-    els.pickTotal.textContent = `${r.score} pts`;
-    els.pickLabel.textContent = r.label;
-  } else {
-    const n = picked ? picked.size : 0;
-    els.pickTotal.textContent = `${n}/3`;
-    els.pickLabel.textContent = n === 0 ? "Click cards on the board to pick." : `${HAND_SIZE - n} more to go.`;
+	const barTier = state.score >= 400 ? "gold" : state.score >= 300 ? "silver" : "bronze";
+	barFill.className = "score-bar-fill tier-" + barTier;
   }
 
 }
@@ -154,15 +142,6 @@ function chestProjLabel(tier, score) {
   if (score >= 300)      return { cls: "silver-locked", label: `Silver locked (${score})` };
   if (tier === "silver") return { cls: "silver",        label: `Silver (${score})` };
   return                        { cls: "bronze",         label: `Bronze (${score})` };
-}
-
-function scoreThreeFromCards(cards) {
-  if (cards.length !== HAND_SIZE) return { score: 0, label: "—" };
-  const fakeBoard = [...cards, null, null];
-  const ranked = rankCombos(fakeBoard);
-  if (ranked.length === 0) return { score: 0, label: "—" };
-  const r = ranked[0];
-  return { score: r.score, label: r.label };
 }
 
 // ---------- session stats ----------

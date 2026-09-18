@@ -168,7 +168,7 @@
     </section>
 
     <aside class="info-panel">
-      <!-- Suggestion block: heuristic answer + both action buttons -->
+      <!-- Suggestion block -->
       <div class="info-block suggestion-block">
         <div class="suggestion-header">
           <div class="label" data-i18n="suggestion">Suggestion</div>
@@ -184,30 +184,23 @@
         </div>
       </div>
 
-      <!-- Score: compact with chest and ceiling context -->
+      <!-- Score -->
       <div class="info-block">
         <div class="label" data-i18n="scoreLabel">Score</div>
         <div id="score" class="score">0</div>
         <div class="score-target" data-i18n="scoreTarget">target 400 (gold)</div>
         <div id="scoreCeiling" class="score-ceiling"></div>
         <div id="chestProjection" class="chest-projection"></div>
-      <div class="score-bar" aria-hidden="true">
-        <div id="scoreBarFill" class="score-bar-fill"></div>
-        <div class="score-bar-mark silver-mark" title="Silver: 300 pts"></div>
-      </div>
+        <div class="score-bar" aria-hidden="true">
+          <div id="scoreBarFill" class="score-bar-fill"></div>
+          <div class="score-bar-mark silver-mark" title="Silver: 300 pts"></div>
+        </div>
       </div>
 
       <!-- Secondary actions -->
       <div class="info-block button-row">
         <button id="undoBtn" class="action-btn" type="button" disabled data-i18n="undo">Undo</button>
         <button id="resetBtn" class="reset-btn" type="button" data-i18n="reset">Reset</button>
-      </div>
-
-      <!-- Pick status (hidden in normal UI, optional in minimal) -->
-      <div class="info-block">
-        <div class="label" data-i18n="yourPick">Your pick</div>
-        <div id="pickTotal" class="pick-total">0/3</div>
-        <div id="pickLabel" class="pick-label" data-i18n="pickHint">Click cards on the field to pick.</div>
       </div>
 
       <div class="promo-text" data-i18n-html="supportText"></div>

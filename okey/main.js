@@ -23,8 +23,6 @@ const els = {
   score: document.getElementById("score"),
   scoreCeiling: document.getElementById("scoreCeiling"),
   chestProjection: document.getElementById("chestProjection"),
-  pickTotal: document.getElementById("pickTotal"),
-  pickLabel: document.getElementById("pickLabel"),
   suggestionNote: document.getElementById("suggestionNote"),
   practiceToggle: document.getElementById("practiceToggle"),
   confirmBtn: document.getElementById("confirmBtn"),
@@ -338,7 +336,6 @@ function refresh() {
     onSlotClick, onSlotRightClick, awaiting: waiting,
   });
 
-
   renderPalette(els.palette, {
     onPaletteClick: practiceMode ? null : onPaletteClick,
     usedCards: usedCardSet(state),
@@ -363,6 +360,15 @@ function refresh() {
     els.acceptSuggestionBtn.textContent = t("useSuggestion");
   }
   els.confirmBtn.disabled = pickedSlots.size !== HAND_SIZE;
+  if (pickedSlots.size > 0 && pickedSlots.size < HAND_SIZE) {
+    els.confirmBtn.textContent = `${pickedSlots.size} / ${HAND_SIZE}`;
+  } else if (pickedSlots.size === HAND_SIZE) {
+    const selCards = [...pickedSlots].map((i) => state.board[i]);
+    const { score: selScore } = scoreHand(selCards);
+    els.confirmBtn.textContent = selScore > 0 ? `${selScore} pts` : t("confirmPick");
+  } else {
+    els.confirmBtn.textContent = t("confirmPick");
+  }
   els.undoBtn.disabled = state.history.length === 0;
 
   checkRunFinished();
