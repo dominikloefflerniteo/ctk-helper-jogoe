@@ -1204,6 +1204,9 @@ body.chat-hidden .chat-tab-arrow {
   font-family: inherit;
   color: var(--fg);
   transition: transform 80ms ease, border-color 100ms ease, box-shadow 200ms ease;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  user-select: none;
 }
 .slot:hover { transform: translateY(-1px); border-color: var(--fg-dim); }
 
@@ -1921,6 +1924,26 @@ body.minimal-ui .long-form { display: none; }
   opacity: 0.65;
   margin-top: 3px;
   letter-spacing: 0.2px;
+}
+
+/* ── Long-press discard feedback (mobile) ── */
+.slot-pressing {
+  animation: longPressCharge 0.5s ease forwards;
+}
+@keyframes longPressCharge {
+  0%   {
+    box-shadow: 0 0 0 0 rgba(235, 87, 87, 0);
+    border-color: var(--border);
+  }
+  60%  {
+    box-shadow: 0 0 0 4px rgba(235, 87, 87, 0.3);
+    border-color: rgba(235, 87, 87, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(235, 87, 87, 0.6), inset 0 0 0 2px rgba(235, 87, 87, 0.4);
+    border-color: var(--okey-red);
+    border-style: dashed;
+  }
 }
 
 

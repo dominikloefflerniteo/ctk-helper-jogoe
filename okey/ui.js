@@ -42,8 +42,43 @@ export function renderBoard(boardEl, state, { picked, suggested, suggestionKind,
       slot.classList.add(heuristicKind === "discard" ? "slot-heuristic-discard" : "slot-heuristic-pick");
     }
 
-    if (onSlotClick) slot.addEventListener("click", () => onSlotClick(i));
-    if (onSlotRightClick) slot.addEventListener("contextmenu", (e) => { e.preventDefault(); onSlotRightClick(i); });
+    // Desktop: click = pick, right-click = discard
+    // Mobile:  tap = pick, long-press (500ms) = discard
+    let lpTimer = null;
+    let lpFired = false;
+
+    if (onSlotClick) {
+      slot.addEventListener("click", () => {
+        if (lpFired) { lpFired = false; return; } // skip click after long-press
+        onSlotClick(i);
+      });
+    }
+
+    if (onSlotRightClick) {
+      // Desktop right-click
+      slot.addEventListener("contextmenu", (e) => { e.preventDefault(); onSlotRightClick(i); });
+
+      // Mobile long-press
+      slot.addEventListener("pointerdown", (e) => {
+        if (e.pointerType !== "touch") return;
+        lpFired = false;
+        slot.classList.add("slot-pressing");
+        lpTimer = setTimeout(() => {
+          lpFired = true;
+          slot.classList.remove("slot-pressing");
+          slot.releasePointerCapture(e.pointerId);
+          onSlotRightClick(i);
+        }, 500);
+      });
+
+      const cancelLp = () => {
+        if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
+        slot.classList.remove("slot-pressing");
+      };
+      slot.addEventListener("pointerup",     cancelLp);
+      slot.addEventListener("pointercancel", cancelLp);
+      slot.addEventListener("pointermove",   (e) => { if (e.pointerType === "touch" && lpTimer) cancelLp(); });
+    }
     boardEl.appendChild(slot);
   }
 }
