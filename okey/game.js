@@ -41,18 +41,9 @@ export function scoreMixedSeq(low) {
 
 // Score a 3-card hand. Returns { score, type, label } where type ∈
 // {"three", "sameSeq", "mixedSeq", "none"} and label is human-readable.
-// The score of three cards is a pure function of those three cards, and there
-// are only 24 cards — so it is a lookup, not a computation. The old version
-// allocated three objects (parseCardId), three arrays (map/map/sort) and a
-// template-literal label on EVERY call, and a 2026-09-15 CPU profile put it at
-// 20% of all search time: it runs in the innermost loop of every playout.
-//
-// The table is built once over every a <= b <= c triple (duplicates included,
-// so degenerate input behaves exactly as it did before) and holds SHARED frozen
-// result objects. A lookup therefore allocates nothing at all.
-//
-// Exhaustively verified identical to the old implementation over all 24^3
-// ordered triples by bench/scorehand-equiv.mjs.
+// Lookup table replaces per-call computation (was 20% of search CPU).
+// Built once over all a≤b≤c triples; returns shared frozen objects.
+// Exhaustively verified identical to the old implementation.
 
 const CARD_INDEX = new Map();
 for (let ci = 0; ci < COLORS.length; ci++) {
@@ -139,9 +130,8 @@ export function clearSlot(state, slotIndex) {
   return setSlot(state, slotIndex, null);
 }
 
-// discardSlot: remove the card AND mark it as consumed (out of deck for the
-// rest of this game). Distinct from clearSlot, which just empties the slot
-// without affecting the deck — that path is reserved for setSlot/undo.
+// Removes the card and marks it consumed (permanently out of deck).
+// Use clearSlot for transient removal that undo can reverse.
 export function discardSlot(state, slotIndex) {
   const card = state.board[slotIndex];
   if (!card) return false;
@@ -177,8 +167,7 @@ export function addCard(state, cardId) {
   return idx;
 }
 
-// confirmPick: lock in a 3-card selection, score it, remove the picked cards
-// from the board. Returns {gained, hand, type, label}.
+// Scores and removes the selected hand. Returns {gained, hand, type, label}.
 export function confirmPick(state, pickedSlots) {
   if (!pickedSlots || pickedSlots.length !== HAND_SIZE) {
     return { gained: 0, hand: [], type: "none", label: "Need 3 cards" };
@@ -254,27 +243,22 @@ export function filledCards(state) {
   return state.board.filter((c) => c !== null);
 }
 
-// Set of card IDs the palette should grey out — currently-on-board union with
-// consumed (discarded or scored). Both are out of the deck for this game.
+// Cards the palette greys out: on board + consumed = unavailable this run.
 export function usedCardSet(state) {
   const out = new Set(state.consumed);
   for (const c of state.board) if (c) out.add(c);
   return out;
 }
 
-// Cards still in the deck (not on the board and not consumed). Used by the
-// solver for discard EV and by practice mode for random draws.
+// Remaining deck: not on board, not consumed.
 // Every card id in the canonical order (colours outer, values inner). Callers
 // depend on that order being stable, so it is the same order the old nested
 // loop produced.
 export const ALL_CARD_IDS = [];
 for (const color of COLORS) for (const v of VALUES) ALL_CARD_IDS.push(cardId(color, v));
 
-// Called several times per decision and once per playout step. The old version
-// allocated a fresh Set (copying `consumed`) and built all 24 ids as template
-// literals on EVERY call — 8.4% of search time in the 2026-09-15 profile, all
-// of it rebuilding constants. The ids are now shared, and with a board of at
-// most five slots a linear scan beats constructing a Set to query it.
+// Hot path: called once per playout step. Iterates ALL_CARD_IDS directly
+// instead of building a Set — was 8.4% of search CPU before this.
 export function deckRemaining(state) {
   const consumed = state.consumed;
   const board = state.board;
@@ -291,11 +275,8 @@ export function deckRemaining(state) {
   return out;
 }
 
-// Practice mode: fill empty slots with random cards from deckRemaining.
-// History entries get `auto: true` so undo() can step over them and treat
-// the entire user-action-plus-refill as one "round" boundary.
-//
-// `rand` is plug-in for testing; defaults to Math.random.
+// Practice mode: fill empty slots from the remaining deck.
+// Entries are marked auto:true so undo() treats them as a single step.
 export function autoFillBoardFromDeck(state, rand = Math.random) {
   while (true) {
     const slot = firstEmptySlot(state);

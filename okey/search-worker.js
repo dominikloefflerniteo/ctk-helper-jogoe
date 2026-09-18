@@ -66,16 +66,19 @@ self.onmessage = (e) => {
   let move = null;
   let outlook = null;
   try {
-    move = suggest(state, { ...(msg.options || {}), cache });
+    // Compute outlook FIRST — if suggest() throws, outlook is still sent in the
+    // error message so main.js doesn't have to recompute it on the main thread.
     // The end-of-run check needs the same exact table this search just built,
     // and it is the one other place that can trigger a full solve. Computing it
     // here costs nothing extra and keeps the main thread free of the only other
     // expensive call in the app.
     outlook = chestOutlook(state, { cache });
+    move = suggest(state, { ...(msg.options || {}), cache });
   } catch (err) {
     // A failed search must not silently freeze the answer on screen: the page
     // keeps the heuristic suggestion it already has and logs why.
-    self.postMessage({ type: "error", key: msg.key, message: String(err && err.message || err) });
+    // Include outlook so main.js can use it without a main-thread solve.
+    self.postMessage({ type: "error", key: msg.key, message: String(err && err.message || err), outlook });
     return;
   }
   // The key travels back untouched so the page can drop an answer to a position

@@ -94,23 +94,9 @@ export function expectedScoreAfterDiscard(board, discardSlots, deck) {
 }
 
 
-// ---------- exact EV, computed cheaply ----------
-//
-// expectedScoreAfterDiscard() re-ranks the whole 5-card board once per deck
-// card. That is O(deck * 10) hand scorings per candidate discard, and it is
-// the reason the solver is too slow to put inside a search.
-//
-// It is also unnecessary. After discarding one card, four cards stay. A drawn
-// card can only score by joining TWO of those four, so:
-//
-//     best pick after the draw = max(best pick among the 4 kept,
-//                                    best combo the drawn card forms with a pair)
-//
-// The second term is a lookup: enumerate the C(4,2)=6 pairs once, write down
-// which single card completes each of them and for how many points, then walk
-// the deck. Same numbers as the old function, ~20x less work.
-//
-// completionsFor returns Map(cardId -> best score that card would create).
+// Exact EV for single-card discard in O(deck) instead of O(deck * C(5,3)).
+// Enumerate the 6 pairs in `kept`, map each to its best completing card,
+// then walk the deck once. completionsFor builds that map.
 function completionsFor(kept) {
   const out = new Map();
   const bump = (id, score) => {
@@ -400,7 +386,17 @@ function suggestMoveV2(state, options = {}) {
     const ev = evAfterSingleDiscard(kept, deck);
     if (ev === null) continue;
     const cost = lambda * scale * (potential[slot] / 3);
-    const net = ev - cost;
+    // Residual synergy for discard: mirrors the pick-path bonus.
+    // Weight 0.5 is proportional to the pick path (discard keeps 4 cards,
+    // pick leaves 2) — more theoretically defensible than 1.0.
+    // Full-solver calibration deferred to bench/.
+    const resAvailDiscard = new Set(available);
+    resAvailDiscard.delete(board[slot]);
+    const keptPots = kept.map((c) => potentialOf(c, resAvailDiscard));
+    const discardResidual = kept.length > 0  // guard: kept=[] → 0/0=NaN
+      ? 0.5 * scale * keptPots.reduce((a, b) => a + b, 0) / kept.length
+      : 0;
+    const net = ev - cost + discardResidual;
     if (bestDiscard === null || net > bestDiscard.net) {
       bestDiscard = { slots: [slot], expectedAfter: ev, cost, net };
     }

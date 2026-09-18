@@ -13,14 +13,23 @@ import {
   renderBoard, renderPalette, updateSidebar, updateSessionStats,
 } from "./ui.js";
 
+// Heuristic slot hints toggle — initial state, changed by the UI button.
+const HEURISTIC_HINTS_DEFAULT = true;
+const HINTS_KEY = "okey-helper.hints.v1";
+function loadHeuristicHints() {
+  try { return localStorage.getItem(HINTS_KEY) !== "0"; } catch { return HEURISTIC_HINTS_DEFAULT; }
+}
+function saveHeuristicHints() {
+  try { localStorage.setItem(HINTS_KEY, heuristicHintsEnabled ? "1" : "0"); } catch {}
+}
+let heuristicHintsEnabled = loadHeuristicHints();
+
 const els = {
   board: document.getElementById("board"),
   palette: document.getElementById("palette"),
   score: document.getElementById("score"),
   scoreCeiling: document.getElementById("scoreCeiling"),
   chestProjection: document.getElementById("chestProjection"),
-  pickTotal: document.getElementById("pickTotal"),
-  pickLabel: document.getElementById("pickLabel"),
   suggestionNote: document.getElementById("suggestionNote"),
   practiceToggle: document.getElementById("practiceToggle"),
   confirmBtn: document.getElementById("confirmBtn"),
@@ -37,6 +46,8 @@ const els = {
   sessionAvg: document.getElementById("sessionAvg"),
   sessionResetBtn: document.getElementById("sessionResetBtn"),
   toast: document.getElementById("toast"),
+  toastMsg: document.getElementById("toastMsg"),
+  toastClose: document.getElementById("toastClose"),
   twitchChatMount: document.getElementById("twitchChatMount"),
   chatBtn: document.getElementById("chatBtn"),
   minimalUiBtn: document.getElementById("minimalUiBtn"),
@@ -50,6 +61,7 @@ const els = {
   twitchConsent: document.getElementById("twitchConsent"),
   twitchConsentBtn: document.getElementById("twitchConsentBtn"),
   revokeTwitchConsentBtn: document.getElementById("revokeTwitchConsentBtn"),
+  heuristicHintsBtn: document.getElementById("heuristicHintsBtn"),
 };
 
 // ---------- state ----------
@@ -64,9 +76,9 @@ let lastSuggestion = null;
 // Suggestion cache + async upgrade, see computeSuggestion() below.
 let suggestionCache = { key: null, move: null, strong: false };
 let pendingKey = null;
-// Set when the player dismisses the end-of-run overlay: the run is over by
-// the numbers, but they asked to keep going, so stop nagging until reset.
-let overlayDismissed = false;
+// Dismissed overlay key — stores positionKey() of the dismissed position.
+// Null when no active dismiss; resets to null on new game.
+let overlayDismissedKey = null;  // key-based dismiss, expires on position change
 
 const PRACTICE_KEY = "okey-helper.practice.v1";
 function loadPracticeMode() {
@@ -112,6 +124,10 @@ function onSlotClick(slotIndex) {
   const card = state.board[slotIndex];
   if (!card) return;
 
+  // Distinguishes "adding the 3rd card" from "swapping an existing selection".
+  const sizeBefore = pickedSlots.size;
+
+  // Cycle selection: replacing the oldest card is less jarring than ignoring.
   // Toggle selection. Replacing the oldest pick when the user already has 3
   // selected feels nicer than ignoring the click.
   if (pickedSlots.has(slotIndex)) {
@@ -122,6 +138,27 @@ function onSlotClick(slotIndex) {
     const first = pickedSlots.values().next().value;
     pickedSlots.delete(first);
     pickedSlots.add(slotIndex);
+  }
+
+  // Auto-confirm when the 3rd card is added (not swapped), combo is valid,
+  // the worker has answered, and the selected slots match the suggestion.
+  // Without the slot check, picking a weaker combo would auto-confirm it.
+  if (sizeBefore < HAND_SIZE && pickedSlots.size === HAND_SIZE) {
+    const pickedCards = [...pickedSlots].map((i) => state.board[i]);
+    const { score } = scoreHand(pickedCards);
+    const suggestedSlots = new Set(lastSuggestion?.slots ?? []);
+    const matchesSuggestion = suggestedSlots.size > 0 &&
+      [...pickedSlots].every((s) => suggestedSlots.has(s));
+    if (score === 0) {
+      toast(t("pickScoresNothing"));
+    } else if (suggestionCache.strong && lastSuggestion?.kind === "pick" && matchesSuggestion) {
+      const r = confirmPick(state, [...pickedSlots]);
+      pickedSlots.clear();
+      clearPendingColor();
+      if (r.gained > 0) toast(t("scored", { gained: r.gained, label: handLabel({ ...r, cards: r.hand }) }));
+      else toast(t("pickScoresNothing"));
+    }
+    // Solver recommends discard, or combo differs — leave cards highlighted.
   }
   refresh();
 }
@@ -138,6 +175,7 @@ function onSlotRightClick(slotIndex) {
     toast(t("deckEmptyNoThrow"));
     return;
   }
+  if (navigator.vibrate) navigator.vibrate(50); // haptic feedback on mobile
   pickedSlots.delete(slotIndex);
   discardSlot(state, slotIndex);
   refresh();
@@ -160,15 +198,21 @@ function onConfirm() {
   }
   const r = confirmPick(state, slots);
   pickedSlots.clear();
-  toast(t("scored", { gained: r.gained, label: handLabel(r) }));
+  toast(t("scored", { gained: r.gained, label: handLabel({ ...r, cards: r.hand }) }));
   refresh();
 }
 
 function onAcceptSuggestion() {
+  // Space fires even when the button is disabled; apply the same gate.
+  if (els.acceptSuggestionBtn?.disabled) return;
   const move = lastSuggestion ?? suggest(state, { cache: policyCache });
   if (!move) { toast(t("addCardsFirst")); return; }
   if (move.kind === "pick") {
-    pickedSlots = new Set(move.slots);
+    // Solver only suggests scoring picks — confirm directly, symmetric with discard.
+    pickedSlots.clear();
+    const r = confirmPick(state, move.slots);
+    if (r.gained > 0) toast(t("scored", { gained: r.gained, label: handLabel({ ...r, cards: r.hand }) }));
+    else toast(t("pickScoresNothing"));
     refresh();
     return;
   }
@@ -176,6 +220,7 @@ function onAcceptSuggestion() {
   // equivalent doesn't shift the next index — discardSlot leaves slot positions
   // alone, so order doesn't matter, but consistency is nice.
   pickedSlots.clear();
+  clearPendingColor();
   const slotsDesc = [...move.slots].sort((a, b) => b - a);
   for (const i of slotsDesc) discardSlot(state, i);
   toast(t("discarded", { n: move.slots.length }));
@@ -185,6 +230,7 @@ function onAcceptSuggestion() {
 function onUndo() {
   if (!undo(state)) { toast(t("nothingUndo")); return; }
   pickedSlots.clear();
+  clearPendingColor();
   refresh();
 }
 
@@ -203,6 +249,10 @@ function onReset() {
     recordGlobalCompletion(tier);
     toast(t("gameOver", { tier: t("tier" + tier[0].toUpperCase() + tier.slice(1)), score: finalScore }));
   }
+  clearTimeout(sessionResetTimer);
+  sessionResetPending = false;
+  els.sessionResetBtn.textContent = t("reset");
+  els.sessionResetBtn.classList.remove("confirm-pending");
   resetState(state);
   pickedSlots.clear();
   // New game, new deck: the exact solver's table belongs to the old one.
@@ -212,25 +262,46 @@ function onReset() {
   pendingKey = null;
   // New game, new deck: the worker's table belongs to the old one too.
   if (searchWorker) searchWorker.postMessage({ type: "reset" });
-  overlayDismissed = false;
+  overlayDismissedKey = null;  // full reset on new game
   hideRunOverlay();
+  clearPendingColor();
   refresh();
 }
 
+let sessionResetPending = false;
+let sessionResetTimer = 0;
 function onSessionReset() {
+  if (!sessionResetPending) {
+    sessionResetPending = true;
+    els.sessionResetBtn.textContent = t("sessionResetConfirm");
+    els.sessionResetBtn.classList.add("confirm-pending");
+    sessionResetTimer = setTimeout(() => {
+      sessionResetPending = false;
+      els.sessionResetBtn.textContent = t("reset");
+      els.sessionResetBtn.classList.remove("confirm-pending");
+    }, 3000);
+    return;
+  }
+  clearTimeout(sessionResetTimer);
+  sessionResetPending = false;
   session = emptySession();
   saveSession();
   updateSessionStats(els, session);
+  els.sessionResetBtn.textContent = t("reset");
+  els.sessionResetBtn.classList.remove("confirm-pending");
 }
 
 // ---------- toast ----------
+const TOAST_MIN_MS = 1800;
+const TOAST_MS_PER_CHAR = 55;
 let toastTimer = 0;
 function toast(msg) {
-  if (!els.toast) return;
-  els.toast.textContent = msg;
+  if (!els.toast || !els.toastMsg) return;
+  els.toastMsg.textContent = msg;
   els.toast.classList.add("toast-show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => els.toast.classList.remove("toast-show"), 1800);
+  const dur = Math.max(TOAST_MIN_MS, msg.length * TOAST_MS_PER_CHAR);
+  toastTimer = setTimeout(() => els.toast.classList.remove("toast-show"), dur);
 }
 
 // ---------- refresh ----------
@@ -245,6 +316,13 @@ function awaitingCards() {
   return empty > 0 && deckRemaining(state).length > 0;
 }
 
+// Maps async search state to the suggestion note text.
+function getSuggestionText(waiting, move, isStrong, missing) {
+  if (waiting) return t("awaitingCards", { n: missing });
+  if (!isStrong) return move ? adviceText(move) : t("calculatingSuggestion");
+  return move ? adviceText(move) : t("noMovesPossible");
+}
+
 function refresh() {
   // Practice mode: any time the board has empty slots and the deck still has
   // cards, auto-draw to keep the field at 5. Single place handles all cases
@@ -254,14 +332,21 @@ function refresh() {
   const waiting = awaitingCards();
   const move = waiting ? null : computeSuggestion();
   lastSuggestion = move;
-  const suggested = move ? new Set(move.slots) : null;
-  const suggestionKind = move ? move.kind : null;
+  // Highlights only after the worker answers; the heuristic disagrees on
+  // pick/discard direction ~40% of the time — showing early causes jarring
+  // slot flips when the worker responds with a different recommendation.
+  const showHints = suggestionCache.strong;
+  const suggested = (showHints && move) ? new Set(move.slots) : null;
+  const suggestionKind = showHints ? (move ? move.kind : null) : null;
+  // Heuristic hints — dashed/faded, visible only while worker computes.
+  const showHeuristic = heuristicHintsEnabled && !waiting && !suggestionCache.strong && !!move;
+  const heuristicSuggested = showHeuristic ? new Set(move.slots) : null;
+  const heuristicKind      = showHeuristic ? move.kind : null;
 
   renderBoard(els.board, state, {
-    picked: pickedSlots, suggested, suggestionKind, onSlotClick, awaiting: waiting,
-  });
-  els.board.querySelectorAll(".slot").forEach((slot, i) => {
-    slot.addEventListener("contextmenu", (e) => { e.preventDefault(); onSlotRightClick(i); });
+    picked: pickedSlots, suggested, suggestionKind,
+    heuristicSuggested, heuristicKind,
+    onSlotClick, onSlotRightClick, awaiting: waiting,
   });
 
   renderPalette(els.palette, {
@@ -272,19 +357,31 @@ function refresh() {
   updateSidebar(els, state, { picked: pickedSlots });
 
   const missing = state.board.filter((c) => !c).length;
-  els.suggestionNote.textContent = waiting
-    ? t("awaitingCards", { n: missing })
-    : (move ? adviceText(move) : t("suggestionPlaceholder"));
+  els.suggestionNote.textContent = getSuggestionText(waiting, move, suggestionCache.strong, missing);
+  // Show "Calculating..." as a subtitle while the heuristic answer is provisional.
+  els.suggestionNote.dataset.status =
+    (!waiting && !suggestionCache.strong && !!move) ? t("calculatingSuggestion") : "";
   els.suggestionNote.classList.toggle("awaiting", waiting);
   els.suggestionNote.classList.toggle("pending", !waiting && !!move && !suggestionCache.strong);
+  els.suggestionNote.classList.toggle("pending-pick",    !waiting && !suggestionCache.strong && !!move && move.kind === "pick");
+  els.suggestionNote.classList.toggle("pending-discard", !waiting && !suggestionCache.strong && !!move && move.kind === "discard");
   document.body.classList.toggle("awaiting-cards", waiting);
-  els.acceptSuggestionBtn.disabled = !move;
+  els.acceptSuggestionBtn.disabled = !move || !suggestionCache.strong;
   if (move && move.kind === "discard") {
     els.acceptSuggestionBtn.textContent = t("discardCards", { n: move.slots.length });
   } else {
     els.acceptSuggestionBtn.textContent = t("useSuggestion");
   }
   els.confirmBtn.disabled = pickedSlots.size !== HAND_SIZE;
+  if (pickedSlots.size > 0 && pickedSlots.size < HAND_SIZE) {
+    els.confirmBtn.textContent = `${pickedSlots.size} / ${HAND_SIZE}`;
+  } else if (pickedSlots.size === HAND_SIZE) {
+    const selCards = [...pickedSlots].map((i) => state.board[i]);
+    const { score: selScore } = scoreHand(selCards);
+    els.confirmBtn.textContent = selScore > 0 ? `${selScore} ${t("pts")}` : `—`;
+  } else {
+    els.confirmBtn.textContent = t("confirmPick");
+  }
   els.undoBtn.disabled = state.history.length === 0;
 
   checkRunFinished();
@@ -310,7 +407,9 @@ function refresh() {
 // The key covers everything the engines look at: the field, the score, and how
 // many cards have left the deck.
 function positionKey() {
-  return state.board.join(",") + "|" + state.score + "|" + state.consumed.size;
+  // Include consumed content to avoid key collision
+  // when different cards are eliminated with same board and score.
+  return state.board.join(",") + "|" + state.score + "|" + [...state.consumed].sort().join(",") + "|" + practiceMode;
 }
 
 // The strong search runs in a worker (search-worker.js) so that making it
@@ -334,6 +433,11 @@ function getWorker() {
       pendingKey = null;
       if (msg.type === "error") {
         console.warn("[okey] search failed, keeping the quick answer:", msg.message);
+        // extract outlook from error message if worker computed it before failing.
+        if (msg.outlook) suggestionCache.outlook = msg.outlook;
+        // Promote to strong so hints render from the heuristic fallback.
+        suggestionCache.strong = true;
+        refresh();
         return;
       }
       if (positionKey() !== msg.key) return;
@@ -346,6 +450,12 @@ function getWorker() {
       workerBroken = true;
       searchWorker = null;
       pendingKey = null;
+      policyCache = createPolicyCache();  // fresh cache — crashed worker's table is invalid
+      // Worker crashed — promote heuristic answer to unblock the UI.
+      if (suggestionCache.key === positionKey() && suggestionCache.move) {
+        suggestionCache.strong = true;
+      }
+      refresh();
     };
   } catch {
     workerBroken = true;
@@ -360,6 +470,13 @@ function computeSuggestion() {
   // Instant answer so the UI has something to draw right now.
   const quick = suggest(state, { cache: policyCache, mode: "heuristic" });
   suggestionCache = { key, move: quick, strong: false };
+
+  // No moves — worker would return null too. Skip the round-trip so the
+  // end-of-run overlay appears immediately instead of after ~280 ms.
+  if (quick === null) {
+    suggestionCache = { key, move: null, strong: true, outlook: null };
+    return null;
+  }
 
   if (pendingKey !== key) {
     pendingKey = key;
@@ -376,10 +493,13 @@ function computeSuggestion() {
       // No worker: the old behaviour, deferred past this paint.
       setTimeout(() => {
         if (pendingKey !== key) return;      // position moved on meanwhile
-        const strong = suggest(state, { cache: policyCache });
+        // Compute outlook first — mirrors the worker path: if suggest() throws
+        // unexpectedly, outlook is still available for checkRunFinished.
+        const outlook = chestOutlook(state, { cache: policyCache });
+        const strong  = suggest(state, { cache: policyCache });
         pendingKey = null;
         if (positionKey() !== key) return;   // ditto, after the search
-        suggestionCache = { key, move: strong, strong: true };
+        suggestionCache = { key, move: strong, strong: true, outlook };
         refresh();
       }, 0);
     }
@@ -400,7 +520,7 @@ function hideRunOverlay() {
 }
 
 function checkRunFinished() {
-  if (!els.runOverlay || overlayDismissed) return;
+  if (!els.runOverlay || overlayDismissedKey === positionKey()) return;
   // chestOutlook can trigger the exact solve, which is the one expensive call
   // in here. Only run it on the render that already carries the strong
   // suggestion — that render happens off the click, so nothing blocks a button
@@ -411,7 +531,9 @@ function checkRunFinished() {
   // "strong" and drag the exact solve back into the click path.
   if (!suggestionCache.strong || suggestionCache.key !== positionKey()) return;
   // Nothing to announce before the run has actually started.
-  if (state.log.length === 0) { hideRunOverlay(); return; }
+  if (state.log.length === 0 && suggestionCache.outlook?.canImprove !== false) {
+    hideRunOverlay(); return;
+  }
 
   // Prefer the outlook the worker already computed for this exact position —
   // recomputing it here would put the one remaining expensive call back on the
@@ -437,7 +559,7 @@ if (els.runOverlayBtn) {
 }
 if (els.runOverlayDismiss) {
   els.runOverlayDismiss.addEventListener("click", () => {
-    overlayDismissed = true;
+    overlayDismissedKey = positionKey();  // expires automatically on next move
     hideRunOverlay();
   });
 }
@@ -468,13 +590,24 @@ const NS = "okey-helper-jogoe";
 const GLOBAL_KEYS = ["games", "gold", "silver", "bronze"];
 const globalCounts = { games: null, gold: null, silver: null, bronze: null };
 
+function setAnimated(id, v) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const next = String(v);
+  if (el.textContent === next) return;
+  el.style.opacity = "0";
+  requestAnimationFrame(() => {
+    el.textContent = next;
+    requestAnimationFrame(() => { el.style.opacity = "1"; });
+  });
+}
 function renderGlobalStats() {
   const fmt = (v) => (v == null ? "…" : v.toLocaleString());
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-  set("globalGames", fmt(globalCounts.games));
-  set("globalGold", fmt(globalCounts.gold));
-  set("globalSilver", fmt(globalCounts.silver));
-  set("globalBronze", fmt(globalCounts.bronze));
+  setAnimated("globalGames", fmt(globalCounts.games));
+  setAnimated("globalGold", fmt(globalCounts.gold));
+  setAnimated("globalSilver", fmt(globalCounts.silver));
+  setAnimated("globalBronze", fmt(globalCounts.bronze));
   const pct = (n) => (globalCounts.games && n != null ? `(${Math.round((n / globalCounts.games) * 100)}%)` : "");
   set("globalPctGold", pct(globalCounts.gold));
   set("globalPctSilver", pct(globalCounts.silver));
@@ -518,9 +651,11 @@ function recordGlobalCompletion(tier) {
 // Refresh while the tab is actually being looked at. Four GETs a minute is far
 // inside the host's rate limit and keeps the panel alive during a session.
 fetchAllGlobalCounts();
-setInterval(() => {
+const globalCountInterval = setInterval(() => {
   if (document.visibilityState === "visible") fetchAllGlobalCounts();
 }, 60_000);
+// pagehide is BFCache-compatible; beforeunload/unload are not.
+window.addEventListener("pagehide", () => clearInterval(globalCountInterval));
 
 
 // ---------- advice wording ----------
@@ -562,7 +697,7 @@ document.querySelectorAll(".lang-btn").forEach((btn) => {
 });
 // Static text is swapped by i18n itself; the dynamic parts (suggestion,
 // button labels, session numbers) need a re-render.
-onLangChange(() => refresh());
+onLangChange(() => { clearPendingColor(); refresh(); });
 applyToDOM();
 
 // ---------- modals (imprint / privacy) ----------
@@ -571,6 +706,7 @@ document.querySelectorAll("[data-open-modal]").forEach((btn) => {
   btn.addEventListener("click", () => {
     const modal = document.getElementById(btn.getAttribute("data-open-modal"));
     if (!modal) return;
+    clearPendingColor();
     modal.hidden = false;
     const card = modal.querySelector(".modal-card");
     if (card) card.focus();
@@ -617,8 +753,24 @@ if (els.likeBtn) {
 // ---------- keyboard ----------
 
 let pendingColor = null;
+let pendingColorTimer = 0;
+// Auto-expire so a forgotten R/B/Y keypress cannot combine minutes later.
+const PENDING_COLOR_TIMEOUT = 2000;
+function setPendingColor(k) {
+  pendingColor = k;
+  clearTimeout(pendingColorTimer);
+  pendingColorTimer = setTimeout(() => { pendingColor = null; }, PENDING_COLOR_TIMEOUT);
+  document.querySelectorAll(".palette-row").forEach((r) => r.classList.remove("pending-color-active"));
+  document.querySelector(`.palette-row[data-color="${k}"]`)?.classList.add("pending-color-active");
+}
+function clearPendingColor() {
+  pendingColor = null;
+  clearTimeout(pendingColorTimer);
+  document.querySelectorAll(".palette-row").forEach((r) => r.classList.remove("pending-color-active"));
+}
 document.addEventListener("keydown", (e) => {
   if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
+  if (document.querySelector(".modal:not([hidden])")) return;
 
   if (e.key === "Backspace") { e.preventDefault(); onUndo(); return; }
   if (e.key === "Escape")    { onReset(); return; }
@@ -626,10 +778,10 @@ document.addEventListener("keydown", (e) => {
   if (e.key === " ")         { e.preventDefault(); onAcceptSuggestion(); return; }
 
   const k = e.key.toUpperCase();
-  if (k === "R" || k === "B" || k === "Y") { pendingColor = k; return; }
+  if (k === "R" || k === "B" || k === "Y") { setPendingColor(k); return; }
   if (pendingColor && /^[1-8]$/.test(e.key)) {
-    onPaletteClick(`${pendingColor}${e.key}`);
-    pendingColor = null;
+    if (!practiceMode) onPaletteClick(`${pendingColor}${e.key}`);
+    clearPendingColor();
   }
 });
 
@@ -659,6 +811,14 @@ function bindToggles() {
       els.minimalUiBtn.classList.toggle("off", !document.body.classList.contains("minimal-ui"));
     });
   }
+  if (els.heuristicHintsBtn) {
+    els.heuristicHintsBtn.addEventListener("click", () => {
+      heuristicHintsEnabled = !heuristicHintsEnabled;
+      saveHeuristicHints();
+      els.heuristicHintsBtn.classList.toggle("off", !heuristicHintsEnabled);
+      refresh();
+    });
+  }
 }
 
 // ---------- practice mode toggle ----------
@@ -669,6 +829,7 @@ function onPracticeToggle() {
   document.body.classList.toggle("practice-on", practiceMode);
   // Toggling clears selection — the board is about to mutate either way.
   pickedSlots.clear();
+  clearPendingColor();
   refresh();
 }
 
@@ -709,5 +870,9 @@ if (els.revokeTwitchConsentBtn) {
 }
 if (twitchConsented()) loadTwitchChat();
 
+els.toastClose?.addEventListener("click", () => {
+  clearTimeout(toastTimer);
+  els.toast.classList.remove("toast-show");
+});
 updateSessionStats(els, session);
 refresh();

@@ -4,10 +4,11 @@
 
 import { COLORS, VALUES, parseCardId, BOARD_SIZE, HAND_SIZE, chestForScore } from "./game.js";
 import { rankCombos, prettyCard } from "./solver.js";
+import { t } from "./i18n.js";
 
 // ---------- board (5 slots) ----------
 
-export function renderBoard(boardEl, state, { picked, suggested, suggestionKind, onSlotClick, awaiting } = {}) {
+export function renderBoard(boardEl, state, { picked, suggested, suggestionKind, heuristicSuggested, heuristicKind, onSlotClick, onSlotRightClick, awaiting } = {}) {
   boardEl.innerHTML = "";
   for (let i = 0; i < BOARD_SIZE; i++) {
     const slot = document.createElement("button");
@@ -37,8 +38,49 @@ export function renderBoard(boardEl, state, { picked, suggested, suggestionKind,
     if (suggested && suggested.has(i)) {
       slot.classList.add(suggestionKind === "discard" ? "slot-suggested-discard" : "slot-suggested");
     }
+    // Heuristic hint — dashed/faded while worker computes; disappears on strong answer.
+    if (heuristicSuggested && heuristicSuggested.has(i)) {
+      slot.classList.add(heuristicKind === "discard" ? "slot-heuristic-discard" : "slot-heuristic-pick");
+    }
 
-    if (onSlotClick) slot.addEventListener("click", () => onSlotClick(i));
+    // Desktop: click = pick, right-click = discard
+    // Mobile:  tap = pick, long-press (500ms) = discard
+    let lpTimer = null;
+    let lpFired = false;
+
+    if (onSlotClick) {
+      slot.addEventListener("click", () => {
+        if (lpFired) { lpFired = false; return; } // skip click after long-press
+        onSlotClick(i);
+      });
+    }
+
+    if (onSlotRightClick) {
+      // Desktop right-click
+      slot.addEventListener("contextmenu", (e) => { e.preventDefault(); onSlotRightClick(i); });
+
+      // Mobile long-press
+      slot.addEventListener("pointerdown", (e) => {
+        if (e.pointerType !== "touch") return;
+        if (!state.board[i]) return; // skip on empty/awaiting slots
+        lpFired = false;
+        slot.classList.add("slot-pressing");
+        lpTimer = setTimeout(() => {
+          lpFired = true;
+          slot.classList.remove("slot-pressing");
+          slot.releasePointerCapture(e.pointerId);
+          onSlotRightClick(i);
+        }, 500);
+      });
+
+      const cancelLp = () => {
+        if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
+        slot.classList.remove("slot-pressing");
+      };
+      slot.addEventListener("pointerup",     cancelLp);
+      slot.addEventListener("pointercancel", cancelLp);
+      slot.addEventListener("pointermove",   (e) => { if (e.pointerType === "touch" && lpTimer) cancelLp(); });
+    }
     boardEl.appendChild(slot);
   }
 }
@@ -106,26 +148,23 @@ export function updateSidebar(els, state, { picked } = {}) {
   const floor = state.score;
   const ceilingThisHand = state.score + bestNow;
   if (state.board.some(Boolean)) {
-    els.scoreCeiling.textContent = `now ${floor} · +${bestNow} if you confirm best`;
+    els.scoreCeiling.textContent = t('scoreCeilingFull', { floor, best: bestNow });
   } else {
-    els.scoreCeiling.textContent = `now ${floor}`;
+    els.scoreCeiling.textContent = t('scoreCeilingEmpty', { floor });
   }
 
   // Chest "where you'd land if you stopped now" — fixed by current score only.
   const tier = chestForScore(state.score);
-  els.chestProjection.textContent = chestProjLabel(tier, state.score);
-  els.chestProjection.className = `chest-projection chest-${tier}`;
-
-  // Current pick total (mid-selection feedback)
-  if (picked && picked.size === HAND_SIZE) {
-    const cards = [...picked].map((i) => state.board[i]);
-    const r = scoreThreeFromCards(cards);
-    els.pickTotal.textContent = `${r.score} pts`;
-    els.pickLabel.textContent = r.label;
-  } else {
-    const n = picked ? picked.size : 0;
-    els.pickTotal.textContent = `${n}/3`;
-    els.pickLabel.textContent = n === 0 ? "Click cards on the board to pick." : `${HAND_SIZE - n} more to go.`;
+  const proj = chestProjLabel(tier, state.score);
+  els.chestProjection.textContent = proj.label;
+  els.chestProjection.className = `chest-projection chest-${proj.cls}`;
+  // Score progress bar
+  const barFill = document.getElementById("scoreBarFill");
+  if (barFill) {
+    const pct = Math.min(state.score / 400, 1) * 100;
+    barFill.style.width = pct + "%";
+	const barTier = state.score >= 400 ? "gold" : state.score >= 300 ? "silver" : "bronze";
+	barFill.className = "score-bar-fill tier-" + barTier;
   }
 
 }
@@ -136,21 +175,10 @@ function bestScoreOnBoard(board) {
 }
 
 function chestProjLabel(tier, score) {
-  switch (tier) {
-    case "gold":   return `Gold (${score} ≥ 400)`;
-    case "silver": return `Silver (${score})`;
-    case "bronze":
-    default:       return `Bronze (${score})`;
-  }
-}
-
-function scoreThreeFromCards(cards) {
-  if (cards.length !== HAND_SIZE) return { score: 0, label: "—" };
-  const fakeBoard = [...cards, null, null];
-  const ranked = rankCombos(fakeBoard);
-  if (ranked.length === 0) return { score: 0, label: "—" };
-  const r = ranked[0];
-  return { score: r.score, label: r.label };
+  if (tier === "gold")    return { cls: "gold",          label: t("chestLabelGold",         { score }) };
+  if (score >= 300)      return { cls: "silver-locked", label: t("chestLabelSilverLocked", { score }) };
+  if (tier === "silver") return { cls: "silver",        label: t("chestLabelSilver",        { score }) };
+  return                        { cls: "bronze",         label: t("chestLabelBronze",        { score }) };
 }
 
 // ---------- session stats ----------
