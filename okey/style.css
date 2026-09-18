@@ -1546,7 +1546,7 @@ body.practice-on .okey-palette {
   background: var(--bg-3);
   border-radius: var(--radius-sm);
   margin: var(--space-4) 0;
-  overflow: hidden;
+  overflow: visible;
 }
 .score-bar-fill {
   height: 100%;
@@ -1982,6 +1982,7 @@ body.minimal-ui .long-form { display: none; }
 .suggestion-note.awaiting {
   color: var(--accent);
   font-weight: 600;
+  transition: opacity 200ms ease, color 200ms ease;
 }
 /* Nudge attention to the palette, which is where the answer is given. */
 body.awaiting-cards .palette-area .board-label {

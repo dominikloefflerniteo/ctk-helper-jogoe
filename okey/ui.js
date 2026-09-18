@@ -4,6 +4,7 @@
 
 import { COLORS, VALUES, parseCardId, BOARD_SIZE, HAND_SIZE, chestForScore } from "./game.js";
 import { rankCombos, prettyCard } from "./solver.js";
+import { t } from "./i18n.js";
 
 // ---------- board (5 slots) ----------
 
@@ -61,6 +62,7 @@ export function renderBoard(boardEl, state, { picked, suggested, suggestionKind,
       // Mobile long-press
       slot.addEventListener("pointerdown", (e) => {
         if (e.pointerType !== "touch") return;
+        if (!state.board[i]) return; // skip on empty/awaiting slots
         lpFired = false;
         slot.classList.add("slot-pressing");
         lpTimer = setTimeout(() => {
@@ -146,9 +148,9 @@ export function updateSidebar(els, state, { picked } = {}) {
   const floor = state.score;
   const ceilingThisHand = state.score + bestNow;
   if (state.board.some(Boolean)) {
-    els.scoreCeiling.textContent = `now ${floor} · +${bestNow} if you confirm best`;
+    els.scoreCeiling.textContent = t('scoreCeilingFull', { floor, best: bestNow });
   } else {
-    els.scoreCeiling.textContent = `now ${floor}`;
+    els.scoreCeiling.textContent = t('scoreCeilingEmpty', { floor });
   }
 
   // Chest "where you'd land if you stopped now" — fixed by current score only.
@@ -173,10 +175,10 @@ function bestScoreOnBoard(board) {
 }
 
 function chestProjLabel(tier, score) {
-  if (tier === "gold")    return { cls: "gold",          label: `Gold (${score} ≥ 400)` };
-  if (score >= 300)      return { cls: "silver-locked", label: `Silver locked (${score})` };
-  if (tier === "silver") return { cls: "silver",        label: `Silver (${score})` };
-  return                        { cls: "bronze",         label: `Bronze (${score})` };
+  if (tier === "gold")    return { cls: "gold",          label: t("chestLabelGold",         { score }) };
+  if (score >= 300)      return { cls: "silver-locked", label: t("chestLabelSilverLocked", { score }) };
+  if (tier === "silver") return { cls: "silver",        label: t("chestLabelSilver",        { score }) };
+  return                        { cls: "bronze",         label: t("chestLabelBronze",        { score }) };
 }
 
 // ---------- session stats ----------

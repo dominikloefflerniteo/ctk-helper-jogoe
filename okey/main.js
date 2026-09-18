@@ -15,7 +15,14 @@ import {
 
 // Heuristic slot hints toggle — initial state, changed by the UI button.
 const HEURISTIC_HINTS_DEFAULT = true;
-let heuristicHintsEnabled = HEURISTIC_HINTS_DEFAULT;
+const HINTS_KEY = "okey-helper.hints.v1";
+function loadHeuristicHints() {
+  try { return localStorage.getItem(HINTS_KEY) !== "0"; } catch { return HEURISTIC_HINTS_DEFAULT; }
+}
+function saveHeuristicHints() {
+  try { localStorage.setItem(HINTS_KEY, heuristicHintsEnabled ? "1" : "0"); } catch {}
+}
+let heuristicHintsEnabled = loadHeuristicHints();
 
 const els = {
   board: document.getElementById("board"),
@@ -213,6 +220,7 @@ function onAcceptSuggestion() {
   // equivalent doesn't shift the next index — discardSlot leaves slot positions
   // alone, so order doesn't matter, but consistency is nice.
   pickedSlots.clear();
+  clearPendingColor();
   const slotsDesc = [...move.slots].sort((a, b) => b - a);
   for (const i of slotsDesc) discardSlot(state, i);
   toast(t("discarded", { n: move.slots.length }));
@@ -370,7 +378,7 @@ function refresh() {
   } else if (pickedSlots.size === HAND_SIZE) {
     const selCards = [...pickedSlots].map((i) => state.board[i]);
     const { score: selScore } = scoreHand(selCards);
-    els.confirmBtn.textContent = selScore > 0 ? `${selScore} pts` : `— pts`;
+    els.confirmBtn.textContent = selScore > 0 ? `${selScore} ${t("pts")}` : `—`;
   } else {
     els.confirmBtn.textContent = t("confirmPick");
   }
@@ -806,6 +814,7 @@ function bindToggles() {
   if (els.heuristicHintsBtn) {
     els.heuristicHintsBtn.addEventListener("click", () => {
       heuristicHintsEnabled = !heuristicHintsEnabled;
+      saveHeuristicHints();
       els.heuristicHintsBtn.classList.toggle("off", !heuristicHintsEnabled);
       refresh();
     });
