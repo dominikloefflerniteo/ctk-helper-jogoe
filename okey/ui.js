@@ -126,9 +126,8 @@ export function updateSidebar(els, state, { picked } = {}) {
   if (barFill) {
     const pct = Math.min(state.score / 400, 1) * 100;
     barFill.style.width = pct + "%";
-    barFill.style.background =
-      state.score >= 400 ? "var(--accent)" :
-      state.score >= 300 ? "var(--v2)" : "var(--v3)";
+    const tier = state.score >= 400 ? "gold" : state.score >= 300 ? "silver" : "bronze";
+    barFill.className = "score-bar-fill tier-" + tier;
   }
 
   // Current pick total (mid-selection feedback)

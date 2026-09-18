@@ -74,10 +74,13 @@ header {
   margin-bottom: var(--space-1);
 }
 .lang-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
   background: var(--bg-3);
   border: 1px solid var(--border);
   color: var(--fg-dim);
-  padding: var(--space-1) var(--space-4);
+  padding: 0 var(--space-4);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -526,6 +529,7 @@ kbd {
   left: 50%;
   display: flex;
   align-items: center;
+  max-width: min(90vw, 480px);
   transform: translateX(-50%);
   background: var(--bg-2);
   border: 1px solid var(--warn);
@@ -589,7 +593,7 @@ kbd {
   margin-bottom: 0;
 }
 .hint-toggle {
-  height: 20px;
+  height: 22px;
   min-width: 24px;
   padding: 0 var(--space-3);
   font-size: 13px;
@@ -666,6 +670,13 @@ kbd {
   transition: background 100ms ease, border-color 100ms ease, opacity 100ms ease;
 }
 .action-btn:hover:not(:disabled) { background: var(--bg-2); border-color: var(--fg-dim); }
+/* ── Button :active press feedback ── */
+.action-btn:active:not(:disabled),
+.reset-btn:active {
+  transform: translateY(1px);
+  opacity: 0.85;
+}
+
 .action-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .reset-btn:hover { background: var(--danger); border-color: var(--danger); }
 
@@ -894,6 +905,31 @@ body.minimal-ui .suggestion-actions .action-btn {
   max-width: 260px;
 }
 
+
+/* ── Pick counter in minimal-ui: show existing block, strip chrome ── */
+body.minimal-ui .info-panel > .info-block:has(#pickTotal) {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  order: 2;
+  padding: var(--space-3) var(--space-8);
+  background: transparent;
+  border-color: transparent;
+}
+body.minimal-ui .info-panel > .info-block:has(#pickTotal) .label,
+body.minimal-ui .pick-label {
+  display: none;
+}
+body.minimal-ui .pick-total {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fg-dim);
+  line-height: 1;
+}
+/* When 3 cards selected: pick-total shows score → highlight it */
+body.minimal-ui .info-panel > .info-block:has(#pickTotal):not(:has(#pickTotal:empty)) .pick-total {
+  color: var(--fg);
+}
 /* Compact header: hide decorative chrome, keep functional controls */
 body.minimal-ui header { padding: var(--space-4) var(--space-8); }
 body.minimal-ui header h1 .subtle,
@@ -1120,6 +1156,14 @@ body.chat-hidden .chat-tab-arrow {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+/* ── Focus rings: modal-close, chat-tab, toast-close ── */
+.modal-close:focus-visible,
+.chat-tab:focus-visible,
+.toast-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 
 /* ===== okey-specific overrides (was okey-style.css) ===== */
 /* Okey helper — extends the base style.css with okey-specific board, palette,
@@ -1525,6 +1569,11 @@ body.practice-on .okey-palette {
   transition: width 400ms ease, background 400ms ease;
   width: 0%;
 }
+/* ── Score bar fill tiers ── */
+.score-bar-fill.tier-bronze { background: var(--v3); }
+.score-bar-fill.tier-silver { background: var(--v2); }
+.score-bar-fill.tier-gold   { background: var(--accent); }
+
 .score-bar-mark {
   position: absolute;
   top: 0;
@@ -1841,6 +1890,11 @@ body.minimal-ui .long-form { display: none; }
   color: var(--fg);
   text-decoration: none;
 }
+#runOverlayDismiss:hover {
+  background: var(--bg-2);
+  border-color: var(--fg-dim);
+}
+
 
 /* Suggestion still being upgraded from the instant heuristic answer to the
    full search: dimmed so it reads as provisional rather than final. */
